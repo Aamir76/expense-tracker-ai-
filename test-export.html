@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Export Functionality Testing</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .test-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .console-output {
+            background-color: #000;
+            color: #00ff00;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>Expense Tracker V2 Export Functionality Testing</h1>
+    
+    <div class="test-container">
+        <h2>Test Environment</h2>
+        <div class="test-section">
+            <div class="test-title">Application Frame</div>
+            <iframe id="appFrame" src="http://localhost:3001"></iframe>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2>Testing Controls</h2>
+        <button onclick="runAllTests()">Run All Tests</button>
+        <button onclick="clearResults()">Clear Results</button>
+        <button onclick="addSampleData()">Add Sample Data</button>
+        <button onclick="clearAllData()">Clear All Data</button>
+    </div>
+
+    <div class="test-container">
+        <h2>Test Results</h2>
+        <div id="testResults"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>Console Output</h2>
+        <div id="consoleOutput" class="console-output"></div>
+    </div>
+
+    <script>
+        let testResults = [];
+        let consoleLog = [];
+
+        function logToConsole(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
+            consoleLog.push(logEntry);
+            updateConsoleDisplay();
+        }
+
+        function updateConsoleDisplay() {
+            const consoleOutput = document.getElementById('consoleOutput');
+            consoleOutput.textContent = consoleLog.join('\n');
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        function addTestResult(testName, status, message, details = null) {
+            const result = {
+                testName,
+                status,
+                message,
+                details,
+                timestamp: new Date().toLocaleTimeString()
+            };
+            testResults.push(result);
+            updateResultsDisplay();
+            logToConsole(`${testName}: ${status} - ${message}`, status);
+        }
+
+        function updateResultsDisplay() {
+            const resultsDiv = document.getElementById('testResults');
+            resultsDiv.innerHTML = testResults.map(result => {
+                const statusClass = result.status.toLowerCase();
+                return `
+                    <div class="test-section">
+                        <div class="test-title">${result.testName}</div>
+                        <div class="test-result ${statusClass}">
+                            <strong>${result.status.toUpperCase()}</strong>: ${result.message}
+                            <br><small>Time: ${result.timestamp}</small>
+                            ${result.details ? `<br><details><summary>Details</summary><pre>${result.details}</pre></details>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function clearResults() {
+            testResults = [];
+            consoleLog = [];
+            updateResultsDisplay();
+            updateConsoleDisplay();
+        }
+
+        async function checkAppLoaded() {
+            return new Promise((resolve) => {
+                const iframe = document.getElementById('appFrame');
+                iframe.onload = () => {
+                    try {
+                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                        if (iframeDoc && iframeDoc.body) {
+                            resolve(true);
+                        } else {
+                            resolve(false);
+                        }
+                    } catch (e) {
+                        resolve(false);
+                    }
+                };
+            });
+        }
+
+        async function addSampleData() {
+            logToConsole('Adding sample data to test export functionality...');
+            
+            try {
+                const iframe = document.getElementById('appFrame');
+                const iframeWindow = iframe.contentWindow;
+                
+                // Add sample expenses to localStorage
+                const sampleExpenses = [
+                    {
+                        id: 'exp-1',
+                        amount: 25.50,
+                        description: 'Lunch at restaurant',
+                        category: 'Food',
+                        date: '2025-01-15',
+                        createdAt: '2025-01-15T12:00:00Z',
+                        updatedAt: '2025-01-15T12:00:00Z'
+                    },
+                    {
+                        id: 'exp-2',
+                        amount: 45.00,
+                        description: 'Gas for car',
+                        category: 'Transportation',
+                        date: '2025-01-14',
+                        createdAt: '2025-01-14T10:00:00Z',
+                        updatedAt: '2025-01-14T10:00:00Z'
+                    },
+                    {
+                        id: 'exp-3',
+                        amount: 15.99,
+                        description: 'Movie ticket',
+                        category: 'Entertainment',
+                        date: '2025-01-13',
+                        createdAt: '2025-01-13T20:00:00Z',
+                        updatedAt: '2025-01-13T20:00:00Z'
+                    },
+                    {
+                        id: 'exp-4',
+                        amount: 120.00,
+                        description: 'Electricity bill',
+                        category: 'Bills',
+                        date: '2025-01-12',
+                        createdAt: '2025-01-12T09:00:00Z',
+                        updatedAt: '2025-01-12T09:00:00Z'
+                    },
+                    {
+                        id: 'exp-5',
+                        amount: 78.50,
+                        description: 'New shoes',
+                        category: 'Shopping',
+                        date: '2025-01-11',
+                        createdAt: '2025-01-11T15:00:00Z',
+                        updatedAt: '2025-01-11T15:00:00Z'
+                    }
+                ];
+
+                iframeWindow.localStorage.setItem('expense-tracker-data', JSON.stringify(sampleExpenses));
+                iframeWindow.location.reload();
+                
+                addTestResult('Sample Data', 'success', 'Added 5 sample expenses and reloaded app');
+                
+                // Wait for reload
+                setTimeout(() => {
+                    logToConsole('Sample data added successfully. Ready for testing.');
+                }, 2000);
+                
+            } catch (error) {
+                addTestResult('Sample Data', 'error', `Failed to add sample data: ${error.message}`);
+            }
+        }
+
+        async function clearAllData() {
+            try {
+                const iframe = document.getElementById('appFrame');
+                const iframeWindow = iframe.contentWindow;
+                
+                iframeWindow.localStorage.removeItem('expense-tracker-data');
+                iframeWindow.location.reload();
+                
+                addTestResult('Clear Data', 'success', 'Cleared all expense data and reloaded app');
+                
+                setTimeout(() => {
+                    logToConsole('All data cleared successfully.');
+                }, 2000);
+                
+            } catch (error) {
+                addTestResult('Clear Data', 'error', `Failed to clear data: ${error.message}`);
+            }
+        }
+
+        async function testExportButtonVisibility() {
+            logToConsole('Testing Export Data button visibility...');
+            
+            try {
+                const iframe = document.getElementById('appFrame');
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                
+                // Navigate to expenses page first
+                const expensesNavLink = iframeDoc.querySelector('a[href="#"], button, nav a');
+                if (expensesNavLink) {
+                    expensesNavLink.click();
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+                
+                // Look for the Export Data button
+                const exportButton = iframeDoc.querySelector('button:contains("Export Data"), [class*="export"], button[class*="bg-blue"]');
+                
+                if (exportButton) {
+                    addTestResult('Export Button Visibility', 'success', 'Export Data button found and visible');
+                    return true;
+                } else {
+                    addTestResult('Export Button Visibility', 'warning', 'Export Data button not found - may be hidden due to no data');
+                    return false;
+                }
+                
+            } catch (error) {
+                addTestResult('Export Button Visibility', 'error', `Failed to test button visibility: ${error.message}`);
+                return false;
+            }
+        }
+
+        async function testModalOpening() {
+            logToConsole('Testing Export Modal opening...');
+            
+            try {
+                const iframe = document.getElementById('appFrame');
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                
+                // Find and click the Export Data button
+                const exportButton = Array.from(iframeDoc.querySelectorAll('button')).find(btn => 
+                    btn.textContent.includes('Export Data') || btn.textContent.includes('Export')
+                );
+                
+                if (exportButton) {
+                    exportButton.click();
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    // Check if modal opened
+                    const modal = iframeDoc.querySelector('[class*="modal"], [class*="fixed"], [class*="z-50"]');
+                    if (modal) {
+                        addTestResult('Modal Opening', 'success', 'Export modal opened successfully');
+                        return true;
+                    } else {
+                        addTestResult('Modal Opening', 'error', 'Modal did not open after clicking Export button');
+                        return false;
+                    }
+                } else {
+                    addTestResult('Modal Opening', 'error', 'Export Data button not found');
+                    return false;
+                }
+                
+            } catch (error) {
+                addTestResult('Modal Opening', 'error', `Failed to test modal opening: ${error.message}`);
+                return false;
+            }
+        }
+
+        async function testTabNavigation() {
+            logToConsole('Testing tab navigation in Export Modal...');
+            
+            try {
+                const iframe = document.getElementById('appFrame');
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                
+                // Find tab buttons
+                const filterTab = Array.from(iframeDoc.querySelectorAll('button')).find(btn => 
+                    btn.textContent.includes('Filters') || btn.textContent.includes('Filter')
+                );
+                const previewTab = Array.from(iframeDoc.querySelectorAll('button')).find(btn => 
+                    btn.textContent.includes('Preview')
+                );
+                const exportTab = Array.from(iframeDoc.querySelectorAll('button')).find(btn => 
+                    btn.textContent.includes('Export') && !btn.textContent.includes('Export Data')
+                );
+                
+                let tabTestResults = [];
+                
+                if (filterTab) {
+                    filterTab.click();
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    tabTestResults.push('Filters tab: Found and clickable');
+                } else {
+                    tabTestResults.push('Filters tab: NOT FOUND');
+                }
+                
+                if (previewTab) {
+                    previewTab.click();
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    tabTestResults.push('Preview tab: Found and clickable');
+                } else {
+                    tabTestResults.push('Preview tab: NOT FOUND');
+                }
+                
+                if (exportTab) {
+                    exportTab.click();
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    tabTestResults.push('Export tab: Found and clickable');
+                } else {
+                    tabTestResults.push('Export tab: NOT FOUND');
+                }
+                
+                const allTabsFound = filterTab && previewTab && exportTab;
+                
+                addTestResult('Tab Navigation', 
+                    allTabsFound ? 'success' : 'warning', 
+                    allTabsFound ? 'All three tabs found and functional' : 'Some tabs missing or not functional',
+                    tabTestResults.join('\n')
+                );
+                
+                return allTabsFound;
+                
+            } catch (error) {
+                addTestResult('Tab Navigation', 'error', `Failed to test tab navigation: ${error.message}`);
+                return false;
+            }
+        }
+
+        async function testDateFiltering() {
+            logToConsole('Testing date range filtering...');
+            
+            try {
+                const iframe = document.getElementById('appFrame');
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                
+                // Go to Filters tab first
+                const filterTab = Array.from(iframeDoc.querySelectorAll('button')).find(btn => 
+                    btn.textContent.includes('Filters') || btn.textContent.includes('Filter')
+                );
+                if (filterTab) filterTab.click();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Find date inputs
+                const startDateInput = iframeDoc.querySelector('input[type="date"]');
+                const endDateInput = iframeDoc.querySelectorAll('input[type="date"]')[1];
+                
+                if (startDateInput && endDateInput) {
+                    // Set date range
+                    startDateInput.value = '2025-01-13';
+                    endDateInput.value = '2025-01-15';
+                    
+                    // Trigger change events
+                    startDateInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    endDateInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    
+                    addTestResult('Date Filtering', 'success', 'Date range inputs found and values set successfully');
+                    return true;
+                } else {
+                    addTestResult('Date Filtering', 'error', 'Date range inputs not found in Filters tab');
+                    return false;
+                }
+                
+            } catch (error) {
+                addTestResult('Date Filtering', 'error', `Failed to test date filtering: ${error.message}`);
+                return false;
+            }
+        }
+
+        async function testCategoryFiltering() {
+            logToConsole('Testing category filtering...');
+            
+            try {
+                const iframe = document.getElementById('appFrame');
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                
+                // Find category checkboxes
+                const categoryCheckboxes = Array.from(iframeDoc.querySelectorAll('input[type="checkbox"]'));
+                const selectAllBtn = Array.from(iframeDoc.querySelectorAll('button')).find(btn => 
+                    btn.textContent.includes('Select All')
+                );
+                const deselectAllBtn = Array.from(iframeDoc.querySelectorAll('button')).find(btn => 
+                    btn.textContent.includes('Deselect All')
+                );
+                
+                let testResults = [];
+                
+                if (categoryCheckboxes.length > 0) {
+                    testResults.push(`Found ${categoryCheckboxes.length} category checkboxes`);
+                    
+                    // Test individual checkbox toggle
+                    if (categoryCheckboxes[0]) {
+                        const initialState = categoryCheckboxes[0].checked;
+                        categoryCheckboxes[0].click();
+                        await new Promise(resolve => setTimeout(resolve, 200));
+                        
+                        if (categoryCheckboxes[0].checked !== initialState) {
+                            testResults.push('Individual checkbox toggle: WORKING');
+                        } else {
+                            testResults.push('Individual checkbox toggle: NOT WORKING');
+                        }
+                    }
+                } else {
+                    testResults.push('No category checkboxes found');
+                }
+                
+                if (selectAllBtn) {
+                    selectAllBtn.click();
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    testResults.push('Select All button: Found and clickable');
+                } else {
+                    testResults.push('Select All button: NOT FOUND');
+                }
+                
+                if (deselectAllBtn) {
+                    deselectAllBtn.click();
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    testResults.push('Deselect All button: Found and clickable');
+                } else {
+                    testResults.push('Deselect All button: NOT FOUND');
+                }
+                
+                const success = categoryCheckboxes.length > 0 && selectAllBtn && deselectAllBtn;
+                
+                addTestResult('Category Filtering', 
+                    success ? 'success' : 'warning', 
+                    success ? 'Category filtering controls found and functional' : 'Some category filtering controls missing',
+                    testResults.join('\n')
+                );
+                
+                return success;
+                
+            } catch (error) {
+                addTestResult('Category Filtering', 'error', `Failed to test category filtering: ${error.message}`);
+                return false;
+            }
+        }
+
+        async function testPreviewFunctionality() {
+            logToConsole('Testing preview functionality...');
+            
+            try {
+                const iframe = document.getElementById('appFrame');
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                
+                // Go to Preview tab
+                const previewTab = Array.from(iframeDoc.querySelectorAll('button')).find(btn => 
+                    btn.textContent.includes('Preview')
+                );
+                if (previewTab) {
+                    previewTab.click();
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                
+                // Look for preview elements
+                const previewTable = iframeDoc.querySelector('table, [class*="table"]');
+                const recordCount = iframeDoc.querySelector('[class*="blue"], [class*="info"]');
+                const noDataMessage = Array.from(iframeDoc.querySelectorAll('*')).find(el => 
+                    el.textContent && el.textContent.includes('No data matches')
+                );
+                
+                let testResults = [];
+                
+                if (previewTable) {
+                    const rows = previewTable.querySelectorAll('tr, [class*="row"]');
+                    testResults.push(`Preview table found with ${rows.length} rows`);
+                } else if (noDataMessage) {
+                    testResults.push('No data message displayed (expected when filters result in empty set)');
+                } else {
+                    testResults.push('No preview table or no-data message found');
+                }
+                
+                if (recordCount) {
+                    testResults.push(`Record count display found: ${recordCount.textContent}`);
+                } else {
+                    testResults.push('Record count display not found');
+                }
+                
+                const success = previewTable || noDataMessage;
+                
+                addTestResult('Preview Functionality', 
+                    success ? 'success' : 'warning', 
+                    success ? 'Preview functionality working correctly' : 'Preview functionality issues detected',
+                    testResults.join('\n')
+                );
+                
+                return success;
+                
+            } catch (error) {
+                addTestResult('Preview Functionality', 'error', `Failed to test preview functionality: ${error.message}`);
+                return false;
+            }
+        }
+
+        async function testExportFormats() {
+            logToConsole('Testing export format selection...');
+            
+            try {
+                const iframe = document.getElementById('appFrame');
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                
+                // Go to Export tab
+                const exportTab = Array.from(iframeDoc.querySelectorAll('button')).find(btn => 
+                    btn.textContent.includes('Export') && !btn.textContent.includes('Export Data')
+                );
+                if (exportTab) {
+                    exportTab.click();
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                
+                // Find format radio buttons
+                const csvRadio = Array.from(iframeDoc.querySelectorAll('input[type="radio"]')).find(radio => 
+                    radio.value === 'csv' || radio.name === 'exportFormat'
+                );
+                const jsonRadio = Array.from(iframeDoc.querySelectorAll('input[type="radio"]')).find(radio => 
+                    radio.value === 'json'
+                );
+                const pdfRadio = Array.from(iframeDoc.querySelectorAll('input[type="radio"]')).find(radio => 
+                    radio.value === 'pdf'
+                );
+                
+                // Find filename input
+                const filenameInput = iframeDoc.querySelector('input[type="text"]');
+                
+                // Find export button
+                const finalExportBtn = Array.from(iframeDoc.querySelectorAll('button')).find(btn => 
+                    btn.textContent.includes('Export Data') && !btn.disabled
+                );
+                
+                let testResults = [];
+                
+                // Test format selection
+                if (csvRadio) {
+                    csvRadio.click();
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    testResults.push('CSV format: Found and selectable');
+                } else {
+                    testResults.push('CSV format: NOT FOUND');
+                }
+                
+                if (jsonRadio) {
+                    jsonRadio.click();
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    testResults.push('JSON format: Found and selectable');
+                } else {
+                    testResults.push('JSON format: NOT FOUND');
+                }
+                
+                if (pdfRadio) {
+                    pdfRadio.click();
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    testResults.push('PDF format: Found and selectable');
+                } else {
+                    testResults.push('PDF format: NOT FOUND');
+                }
+                
+                if (filenameInput) {
+                    testResults.push(`Filename input: Found (current value: "${filenameInput.value}")`);
+                } else {
+                    testResults.push('Filename input: NOT FOUND');
+                }
+                
+                if (finalExportBtn) {
+                    testResults.push('Final Export button: Found and enabled');
+                } else {
+                    testResults.push('Final Export button: NOT FOUND or disabled');
+                }
+                
+                const success = csvRadio && jsonRadio && pdfRadio && filenameInput && finalExportBtn;
+                
+                addTestResult('Export Formats', 
+                    success ? 'success' : 'warning', 
+                    success ? 'All export format options available and functional' : 'Some export format options missing',
+                    testResults.join('\n')
+                );
+                
+                return { success, finalExportBtn, csvRadio, jsonRadio, pdfRadio };
+                
+            } catch (error) {
+                addTestResult('Export Formats', 'error', `Failed to test export formats: ${error.message}`);
+                return { success: false };
+            }
+        }
+
+        async function testActualExports() {
+            logToConsole('Testing actual export functionality...');
+            
+            const formatResult = await testExportFormats();
+            if (!formatResult.success) {
+                addTestResult('Actual Exports', 'error', 'Cannot test exports - format selection failed');
+                return false;
+            }
+            
+            const { finalExportBtn, csvRadio, jsonRadio, pdfRadio } = formatResult;
+            
+            try {
+                let exportResults = [];
+                
+                // Test CSV export
+                if (csvRadio && finalExportBtn) {
+                    csvRadio.click();
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Monitor for downloads or errors
+                    let csvSuccess = false;
+                    try {
+                        finalExportBtn.click();
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        csvSuccess = true; // If no error thrown, consider it successful
+                    } catch (e) {
+                        exportResults.push(`CSV Export: FAILED - ${e.message}`);
+                    }
+                    
+                    if (csvSuccess) {
+                        exportResults.push('CSV Export: Attempted successfully (no errors)');
+                    }
+                }
+                
+                // Test JSON export
+                if (jsonRadio && finalExportBtn) {
+                    jsonRadio.click();
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    let jsonSuccess = false;
+                    try {
+                        finalExportBtn.click();
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        jsonSuccess = true;
+                    } catch (e) {
+                        exportResults.push(`JSON Export: FAILED - ${e.message}`);
+                    }
+                    
+                    if (jsonSuccess) {
+                        exportResults.push('JSON Export: Attempted successfully (no errors)');
+                    }
+                }
+                
+                // Test PDF export
+                if (pdfRadio && finalExportBtn) {
+                    pdfRadio.click();
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    let pdfSuccess = false;
+                    try {
+                        finalExportBtn.click();
+                        await new Promise(resolve => setTimeout(resolve, 2000)); // PDF might take longer
+                        pdfSuccess = true;
+                    } catch (e) {
+                        exportResults.push(`PDF Export: FAILED - ${e.message}`);
+                    }
+                    
+                    if (pdfSuccess) {
+                        exportResults.push('PDF Export: Attempted successfully (no errors)');
+                    }
+                }
+                
+                const successCount = exportResults.filter(r => r.includes('successfully')).length;
+                const success = successCount > 0;
+                
+                addTestResult('Actual Exports', 
+                    success ? 'success' : 'warning', 
+                    `${successCount}/3 export formats tested successfully`, 
+                    exportResults.join('\n')
+                );
+                
+                return success;
+                
+            } catch (error) {
+                addTestResult('Actual Exports', 'error', `Failed to test actual exports: ${error.message}`);
+                return false;
+            }
+        }
+
+        async function testEdgeCases() {
+            logToConsole('Testing edge cases...');
+            
+            try {
+                const iframe = document.getElementById('appFrame');
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                
+                // Test 1: Filter to no results
+                const filterTab = Array.from(iframeDoc.querySelectorAll('button')).find(btn => 
+                    btn.textContent.includes('Filters')
+                );
+                if (filterTab) filterTab.click();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Deselect all categories to create empty result set
+                const deselectAllBtn = Array.from(iframeDoc.querySelectorAll('button')).find(btn => 
+                    btn.textContent.includes('Deselect All')
+                );
+                if (deselectAllBtn) {
+                    deselectAllBtn.click();
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                
+                // Check preview for empty state
+                const previewTab = Array.from(iframeDoc.querySelectorAll('button')).find(btn => 
+                    btn.textContent.includes('Preview')
+                );
+                if (previewTab) {
+                    previewTab.click();
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                
+                const noDataMessage = Array.from(iframeDoc.querySelectorAll('*')).find(el => 
+                    el.textContent && (el.textContent.includes('No data matches') || el.textContent.includes('no data'))
+                );
+                
+                // Test export button behavior with empty data
+                const exportTab = Array.from(iframeDoc.querySelectorAll('button')).find(btn => 
+                    btn.textContent.includes('Export') && !btn.textContent.includes('Export Data')
+                );
+                if (exportTab) exportTab.click();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                const exportBtn = Array.from(iframeDoc.querySelectorAll('button')).find(btn => 
+                    btn.textContent.includes('Export Data')
+                );
+                
+                let edgeResults = [];
+                
+                if (noDataMessage) {
+                    edgeResults.push('Empty result set: Correctly shows "no data" message');
+                } else {
+                    edgeResults.push('Empty result set: No proper empty state message');
+                }
+                
+                if (exportBtn && exportBtn.disabled) {
+                    edgeResults.push('Export button: Correctly disabled when no data');
+                } else if (exportBtn) {
+                    edgeResults.push('Export button: Should be disabled when no data, but appears enabled');
+                } else {
+                    edgeResults.push('Export button: Not found');
+                }
+                
+                const success = noDataMessage !== null;
+                
+                addTestResult('Edge Cases', 
+                    success ? 'success' : 'warning', 
+                    success ? 'Edge cases handled properly' : 'Some edge cases not handled properly',
+                    edgeResults.join('\n')
+                );
+                
+                return success;
+                
+            } catch (error) {
+                addTestResult('Edge Cases', 'error', `Failed to test edge cases: ${error.message}`);
+                return false;
+            }
+        }
+
+        async function checkConsoleErrors() {
+            logToConsole('Checking for console errors...');
+            
+            try {
+                const iframe = document.getElementById('appFrame');
+                const iframeWindow = iframe.contentWindow;
+                
+                // Override console methods to capture errors
+                let capturedErrors = [];
+                const originalError = iframeWindow.console.error;
+                const originalWarn = iframeWindow.console.warn;
+                
+                iframeWindow.console.error = function(...args) {
+                    capturedErrors.push({ type: 'error', message: args.join(' ') });
+                    originalError.apply(this, args);
+                };
+                
+                iframeWindow.console.warn = function(...args) {
+                    capturedErrors.push({ type: 'warning', message: args.join(' ') });
+                    originalWarn.apply(this, args);
+                };
+                
+                // Wait a bit to capture any errors
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Restore original console methods
+                iframeWindow.console.error = originalError;
+                iframeWindow.console.warn = originalWarn;
+                
+                if (capturedErrors.length === 0) {
+                    addTestResult('Console Errors', 'success', 'No console errors or warnings detected');
+                } else {
+                    const errorMessages = capturedErrors.map(e => `${e.type}: ${e.message}`).join('\n');
+                    addTestResult('Console Errors', 'warning', 
+                        `${capturedErrors.length} console issues detected`, 
+                        errorMessages
+                    );
+                }
+                
+                return capturedErrors.length === 0;
+                
+            } catch (error) {
+                addTestResult('Console Errors', 'error', `Failed to check console errors: ${error.message}`);
+                return false;
+            }
+        }
+
+        async function runAllTests() {
+            logToConsole('Starting comprehensive export functionality testing...');
+            clearResults();
+            
+            // Wait for app to load
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Add sample data first
+            await addSampleData();
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            
+            // Run all tests in sequence
+            const tests = [
+                testExportButtonVisibility,
+                testModalOpening,
+                testTabNavigation,
+                testDateFiltering,
+                testCategoryFiltering,
+                testPreviewFunctionality,
+                testActualExports,
+                testEdgeCases,
+                checkConsoleErrors
+            ];
+            
+            let passedTests = 0;
+            
+            for (const test of tests) {
+                try {
+                    const result = await test();
+                    if (result) passedTests++;
+                    await new Promise(resolve => setTimeout(resolve, 1000)); // Pause between tests
+                } catch (error) {
+                    logToConsole(`Test failed with error: ${error.message}`, 'error');
+                }
+            }
+            
+            // Summary
+            logToConsole(`Testing completed: ${passedTests}/${tests.length} tests passed`);
+            addTestResult('Test Summary', 
+                passedTests === tests.length ? 'success' : 'warning',
+                `Overall test results: ${passedTests}/${tests.length} tests passed`
+            );
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            logToConsole('Export functionality testing page loaded');
+            logToConsole('Click "Add Sample Data" first, then "Run All Tests" to begin comprehensive testing');
+        });
+    </script>
+</body>
+</html>

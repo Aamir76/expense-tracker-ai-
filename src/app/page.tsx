@@ -10,7 +10,7 @@ import Dashboard from '@/components/Dashboard';
 import ExpenseForm from '@/components/ExpenseForm';
 import ExpenseFiltersComponent from '@/components/ExpenseFilters';
 import ExpenseList from '@/components/ExpenseList';
-import CloudExportWorkspace from '@/components/CloudExportWorkspace';
+import UnifiedExportInterface from '@/components/UnifiedExportInterface';
 
 export default function Home() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -18,7 +18,6 @@ export default function Home() {
   const [filters, setFilters] = useState<ExpenseFilters>({});
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isCloudExportOpen, setIsCloudExportOpen] = useState(false);
 
   useEffect(() => {
     const loadExpenses = () => {
@@ -111,16 +110,10 @@ export default function Home() {
                 <p className="text-gray-600 mt-2">Manage your expenses and track spending</p>
               </div>
               {expenses.length > 0 && (
-                <button
-                  onClick={() => setIsCloudExportOpen(true)}
-                  className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 flex items-center space-x-2 font-medium shadow-lg"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-                  </svg>
-                  <span>Cloud Export Hub</span>
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                </button>
+                <UnifiedExportInterface 
+                  expenses={expenses} 
+                  filteredExpenses={filteredExpenses} 
+                />
               )}
             </div>
 
@@ -146,11 +139,6 @@ export default function Home() {
         )}
       </main>
 
-      <CloudExportWorkspace
-        isOpen={isCloudExportOpen}
-        onClose={() => setIsCloudExportOpen(false)}
-        expenses={expenses}
-      />
     </div>
   );
 }
