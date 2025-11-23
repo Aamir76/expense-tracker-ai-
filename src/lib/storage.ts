@@ -1,11 +1,18 @@
 import { Expense } from '@/types/expense';
+import { database } from './database';
 
 const STORAGE_KEY = 'expense-tracker-data';
 
-export const storage = {
+// Check if database is configured
+const useDatabase = () => {
+  return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+};
+
+// LocalStorage implementation (fallback)
+const localStorageImpl = {
   getExpenses(): Expense[] {
     if (typeof window === 'undefined') return [];
-    
+
     try {
       const data = localStorage.getItem(STORAGE_KEY);
       return data ? JSON.parse(data) : [];
@@ -17,7 +24,7 @@ export const storage = {
 
   saveExpenses(expenses: Expense[]): void {
     if (typeof window === 'undefined') return;
-    
+
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
     } catch (error) {
@@ -49,5 +56,57 @@ export const storage = {
   clearAllExpenses(): void {
     if (typeof window === 'undefined') return;
     localStorage.removeItem(STORAGE_KEY);
+  }
+};
+
+// Unified storage interface that chooses backend automatically
+export const storage = {
+  async getExpenses(): Promise<Expense[]> {
+    if (useDatabase()) {
+      return await database.getExpenses();
+    }
+    return localStorageImpl.getExpenses();
+  },
+
+  async addExpense(expense: Expense): Promise<Expense> {
+    if (useDatabase()) {
+      return await database.addExpense(expense);
+    }
+    localStorageImpl.addExpense(expense);
+    return expense;
+  },
+
+  async updateExpense(updatedExpense: Expense): Promise<Expense> {
+    if (useDatabase()) {
+      return await database.updateExpense(updatedExpense);
+    }
+    localStorageImpl.updateExpense(updatedExpense);
+    return updatedExpense;
+  },
+
+  async deleteExpense(id: string): Promise<void> {
+    if (useDatabase()) {
+      await database.deleteExpense(id);
+    } else {
+      localStorageImpl.deleteExpense(id);
+    }
+  },
+
+  async clearAllExpenses(): Promise<void> {
+    if (useDatabase()) {
+      await database.clearAllExpenses();
+    } else {
+      localStorageImpl.clearAllExpenses();
+    }
+  },
+
+  // Utility methods
+  isUsingDatabase(): boolean {
+    return useDatabase();
+  },
+
+  // Get localStorage data (for migration)
+  getLocalStorageData(): Expense[] {
+    return localStorageImpl.getExpenses();
   }
 };

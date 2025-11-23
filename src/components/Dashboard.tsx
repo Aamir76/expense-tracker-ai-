@@ -2,6 +2,7 @@
 
 import { ExpenseSummary, Expense } from '@/types/expense';
 import { formatCurrency } from '@/lib/utils';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 interface DashboardProps {
   summary: ExpenseSummary;
@@ -9,6 +10,7 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ summary, recentExpenses }: DashboardProps) {
+  const { currency } = useCurrency();
   const topCategories = Object.entries(summary.categoryTotals)
     .filter(([_, amount]) => amount > 0)
     .sort(([_, a], [__, b]) => b - a)
@@ -29,51 +31,51 @@ export default function Dashboard({ summary, recentExpenses }: DashboardProps) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Expenses</p>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(summary.totalExpenses)}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Expenses</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(summary.totalExpenses, currency)}</p>
             </div>
-            <div className="p-3 bg-blue-100 rounded-full">
+            <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full">
               <span className="text-2xl">💰</span>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">This Month</p>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(summary.monthlyTotal)}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">This Month</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(summary.monthlyTotal, currency)}</p>
             </div>
-            <div className="p-3 bg-green-100 rounded-full">
+            <div className="p-3 bg-green-100 dark:bg-green-900 rounded-full">
               <span className="text-2xl">📅</span>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Transactions</p>
-              <p className="text-2xl font-bold text-gray-900">{summary.expenseCount}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Transactions</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{summary.expenseCount}</p>
             </div>
-            <div className="p-3 bg-purple-100 rounded-full">
+            <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-full">
               <span className="text-2xl">📊</span>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Avg per Transaction</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {formatCurrency(summary.expenseCount > 0 ? summary.totalExpenses / summary.expenseCount : 0)}
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Avg per Transaction</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {formatCurrency(summary.expenseCount > 0 ? summary.totalExpenses / summary.expenseCount : 0, currency)}
               </p>
             </div>
-            <div className="p-3 bg-orange-100 rounded-full">
+            <div className="p-3 bg-orange-100 dark:bg-orange-900 rounded-full">
               <span className="text-2xl">📈</span>
             </div>
           </div>
@@ -81,8 +83,8 @@ export default function Dashboard({ summary, recentExpenses }: DashboardProps) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Categories</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Top Categories</h3>
           {topCategories.length > 0 ? (
             <div className="space-y-4">
               {topCategories.map(([category, amount]) => {
@@ -90,40 +92,40 @@ export default function Dashboard({ summary, recentExpenses }: DashboardProps) {
                 return (
                   <div key={category}>
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-medium text-gray-700">{category}</span>
-                      <span className="text-sm text-gray-600">{formatCurrency(amount)}</span>
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{category}</span>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">{formatCurrency(amount, currency)}</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div
                         className={`h-2 rounded-full ${getCategoryColor(category)}`}
                         style={{ width: `${percentage}%` }}
                       ></div>
                     </div>
-                    <div className="text-xs text-gray-500 mt-1">{percentage.toFixed(1)}% of total</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{percentage.toFixed(1)}% of total</div>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <div className="text-gray-500 text-center py-4">
+            <div className="text-gray-500 dark:text-gray-400 text-center py-4">
               No expenses yet. Add some expenses to see category breakdown.
             </div>
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Expenses</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Expenses</h3>
           {recentExpenses.length > 0 ? (
             <div className="space-y-3">
               {recentExpenses.slice(0, 5).map((expense) => (
-                <div key={expense.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                <div key={expense.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg transition-colors">
                   <div>
-                    <p className="font-medium text-gray-900 truncate max-w-40">{expense.description}</p>
-                    <p className="text-sm text-gray-500">{expense.category}</p>
+                    <p className="font-medium text-gray-900 dark:text-white truncate max-w-40">{expense.description}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{expense.category}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-gray-900">{formatCurrency(expense.amount)}</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(expense.amount, currency)}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       {new Date(expense.date).toLocaleDateString()}
                     </p>
                   </div>
@@ -131,7 +133,7 @@ export default function Dashboard({ summary, recentExpenses }: DashboardProps) {
               ))}
             </div>
           ) : (
-            <div className="text-gray-500 text-center py-4">
+            <div className="text-gray-500 dark:text-gray-400 text-center py-4">
               No recent expenses to show.
             </div>
           )}
@@ -139,8 +141,8 @@ export default function Dashboard({ summary, recentExpenses }: DashboardProps) {
       </div>
 
       {summary.totalExpenses > 0 && (
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Spending Overview</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Spending Overview</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {Object.entries(summary.categoryTotals).map(([category, amount]) => (
               <div key={category} className="text-center">
@@ -149,8 +151,8 @@ export default function Dashboard({ summary, recentExpenses }: DashboardProps) {
                     {category.charAt(0)}
                   </span>
                 </div>
-                <p className="text-sm font-medium text-gray-700">{category}</p>
-                <p className="text-xs text-gray-500">{formatCurrency(amount)}</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{category}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{formatCurrency(amount, currency)}</p>
               </div>
             ))}
           </div>

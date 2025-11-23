@@ -2,6 +2,7 @@
 
 import { Expense } from '@/types/expense';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 interface ExpenseListProps {
   expenses: Expense[];
@@ -10,12 +11,13 @@ interface ExpenseListProps {
 }
 
 export default function ExpenseList({ expenses, onEdit, onDelete }: ExpenseListProps) {
+  const { currency } = useCurrency();
   if (expenses.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-8 text-center">
-        <div className="text-gray-400 text-6xl mb-4">📝</div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No expenses found</h3>
-        <p className="text-gray-500">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 text-center transition-colors">
+        <div className="text-gray-400 dark:text-gray-600 text-6xl mb-4">📝</div>
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No expenses found</h3>
+        <p className="text-gray-500 dark:text-gray-400">
           {expenses.length === 0 ? 'Add your first expense to get started!' : 'Try adjusting your filters.'}
         </p>
       </div>
@@ -35,35 +37,35 @@ export default function ExpenseList({ expenses, onEdit, onDelete }: ExpenseListP
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-colors">
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-50 dark:bg-gray-900">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Date
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Description
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Category
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Amount
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {expenses.map((expense) => (
-              <tr key={expense.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <tr key={expense.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                   {formatDate(expense.date)}
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-900">
+                <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
                   <div className="max-w-xs truncate">{expense.description}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -71,20 +73,20 @@ export default function ExpenseList({ expenses, onEdit, onDelete }: ExpenseListP
                     {expense.category}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {formatCurrency(expense.amount)}
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                  {formatCurrency(expense.amount, currency)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex justify-end gap-2">
                     <button
                       onClick={() => onEdit(expense)}
-                      className="text-blue-600 hover:text-blue-900 transition-colors"
+                      className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 transition-colors"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => onDelete(expense.id)}
-                      className="text-red-600 hover:text-red-900 transition-colors"
+                      className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 transition-colors"
                     >
                       Delete
                     </button>
@@ -95,9 +97,9 @@ export default function ExpenseList({ expenses, onEdit, onDelete }: ExpenseListP
           </tbody>
         </table>
       </div>
-      
-      <div className="bg-gray-50 px-6 py-3 border-t border-gray-200">
-        <div className="text-sm text-gray-500">
+
+      <div className="bg-gray-50 dark:bg-gray-900 px-6 py-3 border-t border-gray-200 dark:border-gray-700 transition-colors">
+        <div className="text-sm text-gray-500 dark:text-gray-400">
           Showing {expenses.length} expense{expenses.length !== 1 ? 's' : ''}
         </div>
       </div>
