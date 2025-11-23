@@ -15,7 +15,8 @@
       "Bash(findstr:*)",
       "Bash(tasklist:*)",
       "Bash(dir:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(cat:*)"
     ],
     "deny": []
   }

@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { Expense } from '@/types/expense';
+import { Database } from '@/types/supabase';
 
 export class DatabaseError extends Error {
   constructor(message: string, public originalError?: unknown) {
@@ -7,6 +8,11 @@ export class DatabaseError extends Error {
     this.name = 'DatabaseError';
   }
 }
+
+// Type for database row from Supabase
+type DatabaseExpense = Database['public']['Tables']['expenses']['Row'];
+type DatabaseExpenseInsert = Database['public']['Tables']['expenses']['Insert'];
+type DatabaseExpenseUpdate = Database['public']['Tables']['expenses']['Update'];
 
 export const database = {
   async getExpenses(): Promise<Expense[]> {
@@ -18,7 +24,7 @@ export const database = {
 
       if (error) throw new DatabaseError('Failed to fetch expenses', error);
 
-      return (data || []).map(row => ({
+      return ((data as DatabaseExpense[]) || []).map(row => ({
         id: row.id,
         amount: Number(row.amount),
         description: row.description,
@@ -35,30 +41,34 @@ export const database = {
 
   async addExpense(expense: Omit<Expense, 'id' | 'createdAt' | 'updatedAt'>): Promise<Expense> {
     try {
+      const insertData: DatabaseExpenseInsert = {
+        amount: expense.amount,
+        description: expense.description,
+        category: expense.category,
+        date: expense.date,
+        payment_method: 'cash', // Default value for compatibility
+        tags: [],
+      };
+
       const { data, error } = await supabase
         .from('expenses')
-        .insert({
-          amount: expense.amount,
-          description: expense.description,
-          category: expense.category,
-          date: expense.date,
-          payment_method: 'cash', // Default value for compatibility
-          tags: [],
-        })
+        // @ts-ignore - Supabase type inference issue
+        .insert(insertData)
         .select()
         .single();
 
       if (error) throw new DatabaseError('Failed to add expense', error);
       if (!data) throw new DatabaseError('No data returned after insert');
 
+      const dbData = data as DatabaseExpense;
       return {
-        id: data.id,
-        amount: Number(data.amount),
-        description: data.description,
-        category: data.category as Expense['category'],
-        date: data.date,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
+        id: dbData.id,
+        amount: Number(dbData.amount),
+        description: dbData.description,
+        category: dbData.category as Expense['category'],
+        date: dbData.date,
+        createdAt: dbData.created_at,
+        updatedAt: dbData.updated_at,
       };
     } catch (error) {
       console.error('Error adding expense to database:', error);
@@ -68,14 +78,17 @@ export const database = {
 
   async updateExpense(expense: Expense): Promise<Expense> {
     try {
+      const updateData: DatabaseExpenseUpdate = {
+        amount: expense.amount,
+        description: expense.description,
+        category: expense.category,
+        date: expense.date,
+      };
+
       const { data, error } = await supabase
         .from('expenses')
-        .update({
-          amount: expense.amount,
-          description: expense.description,
-          category: expense.category,
-          date: expense.date,
-        })
+        // @ts-ignore - Supabase type inference issue
+        .update(updateData)
         .eq('id', expense.id)
         .select()
         .single();
@@ -83,14 +96,15 @@ export const database = {
       if (error) throw new DatabaseError('Failed to update expense', error);
       if (!data) throw new DatabaseError('Expense not found');
 
+      const dbData = data as DatabaseExpense;
       return {
-        id: data.id,
-        amount: Number(data.amount),
-        description: data.description,
-        category: data.category as Expense['category'],
-        date: data.date,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
+        id: dbData.id,
+        amount: Number(dbData.amount),
+        description: dbData.description,
+        category: dbData.category as Expense['category'],
+        date: dbData.date,
+        createdAt: dbData.created_at,
+        updatedAt: dbData.updated_at,
       };
     } catch (error) {
       console.error('Error updating expense in database:', error);
