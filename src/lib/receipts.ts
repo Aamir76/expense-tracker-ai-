@@ -41,13 +41,18 @@ export async function uploadReceipt(
     throw new Error('Failed to upload receipt');
   }
 
-  // Get public URL
-  const { data: urlData } = supabase.storage
+  // Get signed URL for private bucket
+  const { data: urlData, error: urlError } = await supabase.storage
     .from('receipts')
-    .getPublicUrl(filePath);
+    .createSignedUrl(filePath, 3600); // 1 hour expiry
+
+  if (urlError || !urlData?.signedUrl) {
+    console.error('Error getting signed URL:', urlError);
+    throw new Error('Failed to get receipt URL');
+  }
 
   return {
-    url: urlData.publicUrl,
+    url: urlData.signedUrl,
     path: data.path,
   };
 }

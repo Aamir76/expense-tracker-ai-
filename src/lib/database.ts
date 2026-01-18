@@ -42,7 +42,12 @@ export const database = {
 
   async addExpense(expense: Omit<Expense, 'id' | 'createdAt' | 'updatedAt'> & { receipt_url?: string }): Promise<Expense> {
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new DatabaseError('User not authenticated');
+
       const insertData: DatabaseExpenseInsert = {
+        user_id: user.id,
         amount: expense.amount,
         description: expense.description,
         category: expense.category,

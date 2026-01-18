@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 
 export type Currency = 'USD' | 'EUR' | 'GBP' | 'INR' | 'JPY' | 'CAD' | 'AUD' | 'CNY' | 'PKR';
 
@@ -38,17 +39,23 @@ interface CurrencyContextType {
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
+  const { profile } = useAuth();
   const [currency, setCurrencyState] = useState<Currency>('USD');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Load currency from localStorage
-    const savedCurrency = localStorage.getItem('currency') as Currency | null;
-    if (savedCurrency && savedCurrency in CURRENCY_SYMBOLS) {
-      setCurrencyState(savedCurrency);
+    // Priority: 1. Profile from database, 2. localStorage fallback
+    if (profile?.currency && profile.currency in CURRENCY_SYMBOLS) {
+      setCurrencyState(profile.currency as Currency);
+      localStorage.setItem('currency', profile.currency);
+    } else {
+      const savedCurrency = localStorage.getItem('currency') as Currency | null;
+      if (savedCurrency && savedCurrency in CURRENCY_SYMBOLS) {
+        setCurrencyState(savedCurrency);
+      }
     }
     setMounted(true);
-  }, []);
+  }, [profile]);
 
   const setCurrency = (newCurrency: Currency) => {
     setCurrencyState(newCurrency);
