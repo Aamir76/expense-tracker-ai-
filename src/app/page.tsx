@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Expense, ExpenseFilters } from '@/types/expense';
 import { storage } from '@/lib/storage';
 import { filterExpenses, calculateExpenseSummary } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 import Header from '@/components/Header';
 import Dashboard from '@/components/Dashboard';
@@ -11,13 +12,14 @@ import ExpenseForm from '@/components/ExpenseForm';
 import ExpenseFiltersComponent from '@/components/ExpenseFilters';
 import ExpenseList from '@/components/ExpenseList';
 import UnifiedExportInterface from '@/components/UnifiedExportInterface';
-import { ExportSystemV4 } from '@/components/ExportSystemV4';
-import MonthlyInsights from '@/components/MonthlyInsights';
 import DatabaseStatus from '@/components/DatabaseStatus';
+import AuthGuard from '@/components/AuthGuard';
+import Settings from '@/components/Settings';
+import LoadingSkeleton from '@/components/LoadingSkeleton';
 
-export default function Home() {
+function HomeContent() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [currentPage, setCurrentPage] = useState<'dashboard' | 'expenses' | 'export-v4' | 'insights'>('dashboard');
+  const [currentPage, setCurrentPage] = useState<'dashboard' | 'expenses' | 'settings'>('dashboard');
   const [filters, setFilters] = useState<ExpenseFilters>({});
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -86,8 +88,11 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+        <Header currentPage={currentPage} onPageChange={setCurrentPage} />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <LoadingSkeleton variant="dashboard" />
+        </main>
       </div>
     );
   }
@@ -103,23 +108,16 @@ export default function Home() {
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
               <p className="text-gray-600 dark:text-gray-400 mt-2">Overview of your expenses and spending patterns</p>
             </div>
-            <Dashboard summary={summary} recentExpenses={recentExpenses} />
+            <Dashboard summary={summary} recentExpenses={recentExpenses} onNavigateToSettings={() => setCurrentPage('settings')} />
           </div>
-        ) : currentPage === 'insights' ? (
+        ) : currentPage === 'settings' ? (
           <div>
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Monthly Insights</h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-2">Visual breakdown of your spending patterns and budget tracking</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-2">Manage your account and preferences</p>
             </div>
-            <MonthlyInsights expenses={expenses} summary={summary} />
+            <Settings expenses={expenses} />
           </div>
-        ) : currentPage === 'export-v4' ? (
-          <ExportSystemV4
-            expenses={expenses}
-            onExportComplete={(job) => {
-              console.log('Export completed:', job);
-            }}
-          />
         ) : (
           <div>
             <div className="mb-8 flex justify-between items-center">
@@ -159,5 +157,13 @@ export default function Home() {
 
       <DatabaseStatus />
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <AuthGuard>
+      <HomeContent />
+    </AuthGuard>
   );
 }

@@ -3,12 +3,13 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { CurrencyProvider } from '@/contexts/CurrencyContext'
+import { AuthProvider } from '@/contexts/AuthContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Expense Tracker AI',
-  description: 'A modern expense tracking application to manage your personal finances',
+  title: 'Expense Tracker',
+  description: 'A simple, calm expense tracking application to manage your personal finances',
 }
 
 export default function RootLayout({
@@ -19,13 +20,15 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider>
-          <CurrencyProvider>
-            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-              {children}
-            </div>
-          </CurrencyProvider>
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            <CurrencyProvider>
+              <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+                {children}
+              </div>
+            </CurrencyProvider>
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   )

@@ -32,6 +32,7 @@ interface CurrencyContextType {
   currency: Currency;
   setCurrency: (currency: Currency) => void;
   getCurrencySymbol: () => string;
+  formatAmount: (amount: number) => string;
 }
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
@@ -56,13 +57,18 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
 
   const getCurrencySymbol = () => CURRENCY_SYMBOLS[currency];
 
+  const formatAmount = (amount: number) => {
+    const symbol = CURRENCY_SYMBOLS[currency];
+    return `${symbol}${amount.toFixed(2)}`;
+  };
+
   // Prevent flash of wrong currency
   if (!mounted) {
     return null;
   }
 
   return (
-    <CurrencyContext.Provider value={{ currency, setCurrency, getCurrencySymbol }}>
+    <CurrencyContext.Provider value={{ currency, setCurrency, getCurrencySymbol, formatAmount }}>
       {children}
     </CurrencyContext.Provider>
   );

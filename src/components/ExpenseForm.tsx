@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Expense, ExpenseCategory, EXPENSE_CATEGORIES } from '@/types/expense';
 import { generateId } from '@/lib/utils';
+import { uploadReceipt, validateReceiptFile } from '@/lib/receipts';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ExpenseFormProps {
   onSubmit: (expense: Expense) => void;
@@ -11,6 +13,9 @@ interface ExpenseFormProps {
 }
 
 export default function ExpenseForm({ onSubmit, initialData, onCancel }: ExpenseFormProps) {
+  const { user } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [formData, setFormData] = useState({
     amount: initialData?.amount?.toString() || '',
     description: initialData?.description || '',
@@ -18,6 +23,8 @@ export default function ExpenseForm({ onSubmit, initialData, onCancel }: Expense
     date: initialData?.date || new Date().toISOString().split('T')[0]
   });
 
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(initialData?.receipt_url || null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -42,20 +49,35 @@ export default function ExpenseForm({ onSubmit, initialData, onCancel }: Expense
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setIsSubmitting(true);
 
     try {
+      const expenseId = initialData?.id || generateId();
+      let receiptUrl = initialData?.receipt_url;
+
+      // Upload receipt if a new file is selected
+      if (receiptFile && user) {
+        try {
+          const result = await uploadReceipt(user.id, expenseId, receiptFile);
+          receiptUrl = result.url;
+        } catch (uploadError) {
+          console.error('Error uploading receipt:', uploadError);
+          setErrors(prev => ({ ...prev, receipt: 'Failed to upload receipt. Expense will be saved without it.' }));
+        }
+      }
+
       const expense: Expense = {
-        id: initialData?.id || generateId(),
+        id: expenseId,
         amount: parseFloat(formData.amount),
         description: formData.description.trim(),
         category: formData.category,
         date: formData.date,
         createdAt: initialData?.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        receipt_url: receiptUrl
       };
 
       onSubmit(expense);
@@ -67,6 +89,11 @@ export default function ExpenseForm({ onSubmit, initialData, onCancel }: Expense
           category: 'Other',
           date: new Date().toISOString().split('T')[0]
         });
+        setReceiptFile(null);
+        setReceiptPreview(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
       }
     } catch (error) {
       console.error('Error submitting expense:', error);
@@ -79,6 +106,36 @@ export default function ExpenseForm({ onSubmit, initialData, onCancel }: Expense
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setReceiptFile(null);
+      setReceiptPreview(initialData?.receipt_url || null);
+      return;
+    }
+
+    const validationError = validateReceiptFile(file);
+    if (validationError) {
+      setErrors(prev => ({ ...prev, receipt: validationError }));
+      return;
+    }
+
+    setErrors(prev => ({ ...prev, receipt: '' }));
+    setReceiptFile(file);
+
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(file);
+    setReceiptPreview(previewUrl);
+  };
+
+  const handleRemoveReceipt = () => {
+    setReceiptFile(null);
+    setReceiptPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -161,6 +218,71 @@ export default function ExpenseForm({ onSubmit, initialData, onCancel }: Expense
             disabled={isSubmitting}
           />
           {errors.date && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.date}</p>}
+        </div>
+
+        {/* Receipt Upload (Optional) */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Receipt <span className="text-gray-400 font-normal">(optional)</span>
+          </label>
+
+          {receiptPreview ? (
+            <div className="relative">
+              <div className="border border-gray-300 dark:border-gray-600 rounded-md p-2 bg-gray-50 dark:bg-gray-700">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={receiptPreview}
+                    alt="Receipt preview"
+                    className="w-16 h-16 object-cover rounded"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-700 dark:text-gray-300 truncate">
+                      {receiptFile?.name || 'Current receipt'}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {receiptFile ? `${(receiptFile.size / 1024).toFixed(1)} KB` : 'Uploaded'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRemoveReceipt}
+                    disabled={isSubmitting}
+                    className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                    title="Remove receipt"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div
+              className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-md p-4 text-center hover:border-blue-400 dark:hover:border-blue-500 transition-colors cursor-pointer"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <svg className="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Click to upload receipt
+              </p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                JPG, PNG, or WebP (max 5MB)
+              </p>
+            </div>
+          )}
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handleFileChange}
+            disabled={isSubmitting}
+          />
+          {errors.receipt && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.receipt}</p>}
         </div>
 
         <div className="flex gap-3 pt-4">

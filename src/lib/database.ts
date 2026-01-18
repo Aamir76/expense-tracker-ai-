@@ -32,6 +32,7 @@ export const database = {
         date: row.date,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
+        receipt_url: row.receipt_url || undefined,
       }));
     } catch (error) {
       console.error('Error loading expenses from database:', error);
@@ -39,7 +40,7 @@ export const database = {
     }
   },
 
-  async addExpense(expense: Omit<Expense, 'id' | 'createdAt' | 'updatedAt'>): Promise<Expense> {
+  async addExpense(expense: Omit<Expense, 'id' | 'createdAt' | 'updatedAt'> & { receipt_url?: string }): Promise<Expense> {
     try {
       const insertData: DatabaseExpenseInsert = {
         amount: expense.amount,
@@ -48,6 +49,7 @@ export const database = {
         date: expense.date,
         payment_method: 'cash', // Default value for compatibility
         tags: [],
+        receipt_url: expense.receipt_url || null,
       };
 
       const { data, error } = await supabase
@@ -69,6 +71,7 @@ export const database = {
         date: dbData.date,
         createdAt: dbData.created_at,
         updatedAt: dbData.updated_at,
+        receipt_url: dbData.receipt_url || undefined,
       };
     } catch (error) {
       console.error('Error adding expense to database:', error);
@@ -83,6 +86,7 @@ export const database = {
         description: expense.description,
         category: expense.category,
         date: expense.date,
+        receipt_url: expense.receipt_url || null,
       };
 
       const { data, error } = await supabase
@@ -105,6 +109,7 @@ export const database = {
         date: dbData.date,
         createdAt: dbData.created_at,
         updatedAt: dbData.updated_at,
+        receipt_url: dbData.receipt_url || undefined,
       };
     } catch (error) {
       console.error('Error updating expense in database:', error);

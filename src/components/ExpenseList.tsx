@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { Expense } from '@/types/expense';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useCurrency } from '@/contexts/CurrencyContext';
+import ReceiptViewer from './ReceiptViewer';
 
 interface ExpenseListProps {
   expenses: Expense[];
@@ -12,6 +14,8 @@ interface ExpenseListProps {
 
 export default function ExpenseList({ expenses, onEdit, onDelete }: ExpenseListProps) {
   const { currency } = useCurrency();
+  const [viewingReceipt, setViewingReceipt] = useState<string | null>(null);
+
   if (expenses.length === 0) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 text-center transition-colors">
@@ -66,7 +70,20 @@ export default function ExpenseList({ expenses, onEdit, onDelete }: ExpenseListP
                   {formatDate(expense.date)}
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                  <div className="max-w-xs truncate">{expense.description}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="max-w-xs truncate">{expense.description}</span>
+                    {expense.receipt_url && (
+                      <button
+                        onClick={() => setViewingReceipt(expense.receipt_url!)}
+                        className="text-gray-400 hover:text-blue-500 transition-colors"
+                        title="View receipt"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getCategoryColor(expense.category)}`}>
@@ -103,6 +120,13 @@ export default function ExpenseList({ expenses, onEdit, onDelete }: ExpenseListP
           Showing {expenses.length} expense{expenses.length !== 1 ? 's' : ''}
         </div>
       </div>
+
+      {viewingReceipt && (
+        <ReceiptViewer
+          receiptUrl={viewingReceipt}
+          onClose={() => setViewingReceipt(null)}
+        />
+      )}
     </div>
   );
 }

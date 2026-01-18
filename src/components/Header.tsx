@@ -5,8 +5,8 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useCurrency, Currency, CURRENCY_SYMBOLS, CURRENCY_NAMES } from '@/contexts/CurrencyContext';
 
 interface HeaderProps {
-  currentPage: 'dashboard' | 'expenses' | 'export-v4' | 'insights';
-  onPageChange: (page: 'dashboard' | 'expenses' | 'export-v4' | 'insights') => void;
+  currentPage: 'dashboard' | 'expenses' | 'settings';
+  onPageChange: (page: 'dashboard' | 'expenses' | 'settings') => void;
 }
 
 export default function Header({ currentPage, onPageChange }: HeaderProps) {
@@ -50,28 +50,14 @@ export default function Header({ currentPage, onPageChange }: HeaderProps) {
                 Expenses
               </button>
               <button
-                onClick={() => onPageChange('insights')}
+                onClick={() => onPageChange('settings')}
                 className={`px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
-                  currentPage === 'insights'
+                  currentPage === 'settings'
                     ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
-                Insights
-              </button>
-              <button
-                onClick={() => onPageChange('export-v4')}
-                className={`px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors relative ${
-                  currentPage === 'export-v4'
-                    ? 'bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 text-blue-700 dark:text-blue-300'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
-              >
-                <span className="hidden sm:inline">Export V4</span>
-                <span className="sm:hidden">V4</span>
-                <span className="absolute -top-1 -right-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs px-1 rounded-full">
-                  New
-                </span>
+                Settings
               </button>
             </nav>
 

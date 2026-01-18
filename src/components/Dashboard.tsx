@@ -3,14 +3,18 @@
 import { ExpenseSummary, Expense } from '@/types/expense';
 import { formatCurrency } from '@/lib/utils';
 import { useCurrency } from '@/contexts/CurrencyContext';
+import { useAuth } from '@/contexts/AuthContext';
+import BudgetBar from './BudgetBar';
 
 interface DashboardProps {
   summary: ExpenseSummary;
   recentExpenses: Expense[];
+  onNavigateToSettings?: () => void;
 }
 
-export default function Dashboard({ summary, recentExpenses }: DashboardProps) {
+export default function Dashboard({ summary, recentExpenses, onNavigateToSettings }: DashboardProps) {
   const { currency } = useCurrency();
+  const { profile } = useAuth();
   const topCategories = Object.entries(summary.categoryTotals)
     .filter(([_, amount]) => amount > 0)
     .sort(([_, a], [__, b]) => b - a)
@@ -81,6 +85,13 @@ export default function Dashboard({ summary, recentExpenses }: DashboardProps) {
           </div>
         </div>
       </div>
+
+      {/* Budget Bar */}
+      <BudgetBar
+        budget={profile?.monthly_budget ?? null}
+        spent={summary.monthlyTotal}
+        onEditClick={onNavigateToSettings}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors">
