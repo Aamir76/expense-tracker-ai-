@@ -1,4 +1,4 @@
-import { Expense, ExpenseFilters, ExpenseSummary, ExpenseCategory } from '@/types/expense';
+import { Expense, ExpenseFilters, ExpenseSummary } from '@/types/expense';
 
 export function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
@@ -48,16 +48,12 @@ export function calculateExpenseSummary(expenses: Expense[]): ExpenseSummary {
   
   const monthlyTotal = monthlyExpenses.reduce((sum, expense) => sum + expense.amount, 0);
 
-  const categoryTotals: Record<ExpenseCategory, number> = {
-    Food: 0,
-    Transportation: 0,
-    Entertainment: 0,
-    Shopping: 0,
-    Bills: 0,
-    Other: 0
-  };
+  const categoryTotals: Record<string, number> = {};
 
   expenses.forEach(expense => {
+    if (!categoryTotals[expense.category]) {
+      categoryTotals[expense.category] = 0;
+    }
     categoryTotals[expense.category] += expense.amount;
   });
 

@@ -19,7 +19,8 @@
       "Bash(cat:*)",
       "Bash(git push:*)",
       "Bash(npx next dev --port 3001)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(npx next build:*)"
     ],
     "deny": []
   }
