@@ -108,5 +108,10 @@ export const storage = {
   // Get localStorage data (for migration)
   getLocalStorageData(): Expense[] {
     return localStorageImpl.getExpenses();
+  },
+
+  // Clear only localStorage data (used after migration)
+  clearLocalStorageData(): void {
+    localStorageImpl.clearAllExpenses();
   }
 };

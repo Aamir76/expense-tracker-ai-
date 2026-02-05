@@ -49,6 +49,7 @@ export default function DatabaseStatus() {
       }
 
       setMigrationStatus('success');
+      storage.clearLocalStorageData();
       alert(`Successfully migrated ${localData.length} expenses to Supabase!`);
 
       // Refresh the page to load from database
