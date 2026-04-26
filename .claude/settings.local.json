@@ -20,7 +20,9 @@
       "Bash(git push:*)",
       "Bash(npx next dev --port 3001)",
       "Bash(timeout:*)",
-      "Bash(npx next build:*)"
+      "Bash(npx next build:*)",
+      "Bash(npm uninstall *)",
+      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\(JSON.stringify\\(Object.keys\\(p.dependencies\\), null, 2\\)\\)\")"
     ],
     "deny": []
   }

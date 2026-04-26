@@ -187,6 +187,33 @@ export class AdvancedExportImpl {
   }
 }
 
+// QR code export — qrcode is loaded lazily only when this is called
+export class QRExportUtils {
+  static async generateDataUrl(expenses: Expense[]): Promise<string> {
+    const { default: QRCode } = await import('qrcode');
+
+    const total = expenses.reduce((sum, e) => sum + e.amount, 0);
+    const byCategory: Record<string, number> = {};
+    for (const e of expenses) {
+      byCategory[e.category] = (byCategory[e.category] || 0) + e.amount;
+    }
+
+    // Keep the payload compact so it always fits within QR code capacity
+    const payload = JSON.stringify({
+      at: new Date().toISOString().split('T')[0],
+      n: expenses.length,
+      total: +total.toFixed(2),
+      categories: byCategory,
+    });
+
+    return QRCode.toDataURL(payload, {
+      errorCorrectionLevel: 'M',
+      width: 300,
+      margin: 2,
+    });
+  }
+}
+
 // Factory for creating the export system
 export class ExportSystemFactory {
   static create(): ExportSystem {
