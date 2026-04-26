@@ -22,7 +22,9 @@
       "Bash(timeout:*)",
       "Bash(npx next build:*)",
       "Bash(npm uninstall *)",
-      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\(JSON.stringify\\(Object.keys\\(p.dependencies\\), null, 2\\)\\)\")"
+      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\(JSON.stringify\\(Object.keys\\(p.dependencies\\), null, 2\\)\\)\")",
+      "Bash(node -e \"const v = require\\('./node_modules/next/package.json'\\).version; console.log\\(v\\)\")",
+      "Bash(node -e ' *)"
     ],
     "deny": []
   }
