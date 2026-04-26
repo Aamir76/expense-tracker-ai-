@@ -14,7 +14,7 @@ export const CURRENCY_SYMBOLS: Record<Currency, string> = {
   CAD: 'C$',
   AUD: 'A$',
   CNY: '¥',
-  PKR: '₨'
+  PKR: '₨',
 };
 
 export const CURRENCY_NAMES: Record<Currency, string> = {
@@ -26,7 +26,7 @@ export const CURRENCY_NAMES: Record<Currency, string> = {
   CAD: 'Canadian Dollar',
   AUD: 'Australian Dollar',
   CNY: 'Chinese Yuan',
-  PKR: 'Pakistani Rupee'
+  PKR: 'Pakistani Rupee',
 };
 
 interface CurrencyContextType {
@@ -41,39 +41,32 @@ const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   const { profile } = useAuth();
   const [currency, setCurrencyState] = useState<Currency>('USD');
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Priority: 1. Profile from database, 2. localStorage fallback
     if (profile?.currency && profile.currency in CURRENCY_SYMBOLS) {
       setCurrencyState(profile.currency as Currency);
-      localStorage.setItem('currency', profile.currency);
-    } else {
-      const savedCurrency = localStorage.getItem('currency') as Currency | null;
-      if (savedCurrency && savedCurrency in CURRENCY_SYMBOLS) {
-        setCurrencyState(savedCurrency);
-      }
+      try { localStorage.setItem('currency', profile.currency); } catch { /* private browsing */ }
+      return;
     }
-    setMounted(true);
+    // Fall back to cached preference from localStorage
+    try {
+      const saved = localStorage.getItem('currency') as Currency | null;
+      if (saved && saved in CURRENCY_SYMBOLS) setCurrencyState(saved);
+    } catch { /* private browsing */ }
   }, [profile]);
 
   const setCurrency = (newCurrency: Currency) => {
     setCurrencyState(newCurrency);
-    localStorage.setItem('currency', newCurrency);
+    try { localStorage.setItem('currency', newCurrency); } catch { /* private browsing */ }
   };
 
   const getCurrencySymbol = () => CURRENCY_SYMBOLS[currency];
 
-  const formatAmount = (amount: number) => {
-    const symbol = CURRENCY_SYMBOLS[currency];
-    return `${symbol}${amount.toFixed(2)}`;
-  };
+  const formatAmount = (amount: number) =>
+    `${CURRENCY_SYMBOLS[currency]}${amount.toFixed(2)}`;
 
-  // Prevent flash of wrong currency
-  if (!mounted) {
-    return null;
-  }
-
+  // Always render children — no null gate needed.
+  // Children start with USD default and update once profile/localStorage are read.
   return (
     <CurrencyContext.Provider value={{ currency, setCurrency, getCurrencySymbol, formatAmount }}>
       {children}

@@ -18,6 +18,7 @@ import Settings from '@/components/Settings';
 import LoadingSkeleton from '@/components/LoadingSkeleton';
 
 function HomeContent() {
+  const { user } = useAuth();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [currentPage, setCurrentPage] = useState<'dashboard' | 'expenses' | 'settings'>('dashboard');
   const [filters, setFilters] = useState<ExpenseFilters>({});
@@ -25,6 +26,13 @@ function HomeContent() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // HomeContent only renders when AuthGuard confirms user + profile are set,
+    // but guard here defensively so a stale render never fires an unauthed query.
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
+
     const loadExpenses = async () => {
       try {
         const savedExpenses = await storage.getExpenses();
@@ -37,7 +45,7 @@ function HomeContent() {
     };
 
     loadExpenses();
-  }, []);
+  }, [user?.id]); // re-run if the authenticated user identity changes
 
   const handleAddExpense = async (expense: Expense) => {
     try {
