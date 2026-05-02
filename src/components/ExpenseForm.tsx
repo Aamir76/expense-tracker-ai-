@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Expense, ExpenseCategory, EXPENSE_CATEGORIES } from '@/types/expense';
 import { generateId } from '@/lib/utils';
-import { uploadReceipt, validateReceiptFile } from '@/lib/receipts';
+import { uploadReceipt, validateReceiptFile, getSignedReceiptUrl } from '@/lib/receipts';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface ExpenseFormProps {
@@ -24,8 +24,16 @@ export default function ExpenseForm({ onSubmit, initialData, onCancel }: Expense
   });
 
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
-  const [receiptPreview, setReceiptPreview] = useState<string | null>(initialData?.receipt_url || null);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (initialData?.receipt_path) {
+      getSignedReceiptUrl(initialData.receipt_path).then(url => {
+        if (url) setReceiptPreview(url);
+      });
+    }
+  }, [initialData?.receipt_path]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateForm = () => {
@@ -56,13 +64,12 @@ export default function ExpenseForm({ onSubmit, initialData, onCancel }: Expense
 
     try {
       const expenseId = initialData?.id || generateId();
-      let receiptUrl = initialData?.receipt_url;
+      let receiptPath = initialData?.receipt_path;
 
-      // Upload receipt if a new file is selected
       if (receiptFile && user) {
         try {
           const result = await uploadReceipt(user.id, expenseId, receiptFile);
-          receiptUrl = result.url;
+          receiptPath = result.path;
         } catch (uploadError) {
           console.error('Error uploading receipt:', uploadError);
           setErrors(prev => ({ ...prev, receipt: 'Failed to upload receipt. Expense will be saved without it.' }));
@@ -77,7 +84,7 @@ export default function ExpenseForm({ onSubmit, initialData, onCancel }: Expense
         date: formData.date,
         createdAt: initialData?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        receipt_url: receiptUrl
+        receipt_path: receiptPath,
       };
 
       onSubmit(expense);
@@ -113,7 +120,11 @@ export default function ExpenseForm({ onSubmit, initialData, onCancel }: Expense
     const file = e.target.files?.[0];
     if (!file) {
       setReceiptFile(null);
-      setReceiptPreview(initialData?.receipt_url || null);
+      if (initialData?.receipt_path) {
+        getSignedReceiptUrl(initialData.receipt_path).then(url => setReceiptPreview(url));
+      } else {
+        setReceiptPreview(null);
+      }
       return;
     }
 

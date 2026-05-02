@@ -7,7 +7,7 @@ export interface Expense {
   date: string;
   createdAt: string;
   updatedAt: string;
-  receipt_url?: string;
+  receipt_path?: string;
   user_id?: string;
 }
 

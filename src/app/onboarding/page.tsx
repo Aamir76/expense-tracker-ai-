@@ -55,17 +55,17 @@ export default function OnboardingPage() {
     setIsLoading(true);
 
     try {
-      // Create profile with timeout
+      // Upsert so retries and existing-but-undetected profiles are handled gracefully
       const profilePromise = supabase
         .from('profiles')
-        .insert({
+        .upsert({
           id: user.id,
           name: name.trim(),
           currency,
-        });
+        }, { onConflict: 'id' });
 
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Request timed out. Please check your connection and try again.')), 15000)
+        setTimeout(() => reject(new Error('Request timed out — your database may be waking up. Please wait a moment and try again.')), 30000)
       );
 
       const { error: profileError } = await Promise.race([profilePromise, timeoutPromise]) as { error: Error | null };

@@ -156,3 +156,11 @@ BEGIN
     (p_user_id, 'Other', '#6b7280', 9);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 7. Receipt path migration
+-- =====================================================
+-- The app now stores the storage path (not a signed URL) in receipt_url.
+-- Signed URLs are generated on-demand so they never expire.
+-- No column rename is required — the existing receipt_url column holds the path value.
+-- If you previously stored signed URLs and want to clear them, run:
+-- UPDATE expenses SET receipt_url = NULL WHERE receipt_url LIKE 'https://%';

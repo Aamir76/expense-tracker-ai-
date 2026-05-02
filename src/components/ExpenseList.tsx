@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Expense } from '@/types/expense';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useCurrency } from '@/contexts/CurrencyContext';
+import { getSignedReceiptUrl } from '@/lib/receipts';
 import ReceiptViewer from './ReceiptViewer';
 
 interface ExpenseListProps {
@@ -15,6 +16,19 @@ interface ExpenseListProps {
 export default function ExpenseList({ expenses, onEdit, onDelete }: ExpenseListProps) {
   const { currency } = useCurrency();
   const [viewingReceipt, setViewingReceipt] = useState<string | null>(null);
+  const [loadingReceiptId, setLoadingReceiptId] = useState<string | null>(null);
+
+  const handleViewReceipt = async (expenseId: string, receiptPath: string) => {
+    setLoadingReceiptId(expenseId);
+    try {
+      const url = await getSignedReceiptUrl(receiptPath);
+      if (url) {
+        setViewingReceipt(url);
+      }
+    } finally {
+      setLoadingReceiptId(null);
+    }
+  };
 
   if (expenses.length === 0) {
     return (
@@ -72,10 +86,11 @@ export default function ExpenseList({ expenses, onEdit, onDelete }: ExpenseListP
                 <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
                   <div className="flex items-center gap-2">
                     <span className="max-w-xs truncate">{expense.description}</span>
-                    {expense.receipt_url && (
+                    {expense.receipt_path && (
                       <button
-                        onClick={() => setViewingReceipt(expense.receipt_url!)}
-                        className="text-gray-400 hover:text-blue-500 transition-colors"
+                        onClick={() => handleViewReceipt(expense.id, expense.receipt_path!)}
+                        disabled={loadingReceiptId === expense.id}
+                        className="text-gray-400 hover:text-blue-500 transition-colors disabled:opacity-50"
                         title="View receipt"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
