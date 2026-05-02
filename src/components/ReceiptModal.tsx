@@ -43,7 +43,7 @@ export default function ReceiptModal({
 
     try {
       const result = await uploadReceipt(user.id, expenseId, file);
-      onUploadComplete(result.url);
+      onUploadComplete(result.path);
       onClose();
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to upload receipt';
