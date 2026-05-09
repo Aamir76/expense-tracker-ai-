@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { Expense, ExpenseFilters } from '@/types/expense';
+import { Category } from '@/types/supabase';
 import { storage } from '@/lib/storage';
+import { getCategories } from '@/lib/categories';
 import { deleteReceipt } from '@/lib/receipts';
 import { filterExpenses, calculateExpenseSummary } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,6 +23,7 @@ import LoadingSkeleton from '@/components/LoadingSkeleton';
 function HomeContent() {
   const { user } = useAuth();
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [currentPage, setCurrentPage] = useState<'dashboard' | 'expenses' | 'settings'>('dashboard');
   const [filters, setFilters] = useState<ExpenseFilters>({});
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
@@ -45,7 +48,17 @@ function HomeContent() {
       }
     };
 
+    const loadCategories = async () => {
+      try {
+        const cats = await getCategories(user.id);
+        setCategories(cats);
+      } catch (error) {
+        console.error('Error loading categories:', error);
+      }
+    };
+
     loadExpenses();
+    loadCategories();
   }, [user?.id]); // re-run if the authenticated user identity changes
 
   const handleAddExpense = async (expense: Expense) => {
@@ -92,6 +105,17 @@ function HomeContent() {
 
   const handleCancelEdit = () => {
     setEditingExpense(null);
+  };
+
+  const handleUpdateCategory = async (id: string, newCategory: string) => {
+    const expense = expenses.find(e => e.id === id);
+    if (!expense) return;
+    try {
+      const updated = await storage.updateExpense({ ...expense, category: newCategory });
+      setExpenses(prev => prev.map(e => e.id === updated.id ? updated : e));
+    } catch (error) {
+      console.error('Error updating category:', error);
+    }
   };
 
 
@@ -163,8 +187,10 @@ function HomeContent() {
 
               <ExpenseList
                 expenses={filteredExpenses}
+                categories={categories}
                 onEdit={handleEditExpense}
                 onDelete={handleDeleteExpense}
+                onUpdateCategory={handleUpdateCategory}
               />
             </div>
           </div>

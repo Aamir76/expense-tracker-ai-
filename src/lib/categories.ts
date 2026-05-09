@@ -90,13 +90,13 @@ export async function deleteCategory(categoryId: string): Promise<void> {
 }
 
 export async function reassignExpensesToCategory(
-  fromCategoryId: string,
-  toCategoryId: string
+  fromCategoryName: string,
+  toCategoryName: string
 ): Promise<void> {
   const { error } = await supabase
     .from('expenses')
-    .update({ category_id: toCategoryId })
-    .eq('category_id', fromCategoryId);
+    .update({ category: toCategoryName })
+    .eq('category', fromCategoryName);
 
   if (error) {
     console.error('Error reassigning expenses:', error);

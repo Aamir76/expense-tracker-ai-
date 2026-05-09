@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Expense } from '@/types/expense';
+import { Category } from '@/types/supabase';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { getSignedReceiptUrl } from '@/lib/receipts';
@@ -9,14 +10,17 @@ import ReceiptViewer from './ReceiptViewer';
 
 interface ExpenseListProps {
   expenses: Expense[];
+  categories: Category[];
   onEdit: (expense: Expense) => void;
   onDelete: (id: string) => void;
+  onUpdateCategory: (id: string, category: string) => void;
 }
 
-export default function ExpenseList({ expenses, onEdit, onDelete }: ExpenseListProps) {
+export default function ExpenseList({ expenses, categories, onEdit, onDelete, onUpdateCategory }: ExpenseListProps) {
   const { currency } = useCurrency();
   const [viewingReceipt, setViewingReceipt] = useState<string | null>(null);
   const [loadingReceiptId, setLoadingReceiptId] = useState<string | null>(null);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
 
   const handleViewReceipt = async (expenseId: string, receiptPath: string) => {
     setLoadingReceiptId(expenseId);
@@ -41,18 +45,6 @@ export default function ExpenseList({ expenses, onEdit, onDelete }: ExpenseListP
       </div>
     );
   }
-
-  const getCategoryColor = (category: string) => {
-    const colors = {
-      Food: 'bg-orange-100 text-orange-800',
-      Transportation: 'bg-blue-100 text-blue-800',
-      Entertainment: 'bg-purple-100 text-purple-800',
-      Shopping: 'bg-pink-100 text-pink-800',
-      Bills: 'bg-red-100 text-red-800',
-      Other: 'bg-gray-100 text-gray-800'
-    };
-    return colors[category as keyof typeof colors] || colors.Other;
-  };
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-colors">
@@ -101,9 +93,41 @@ export default function ExpenseList({ expenses, onEdit, onDelete }: ExpenseListP
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getCategoryColor(expense.category)}`}>
-                    {expense.category}
-                  </span>
+                  {editingCategoryId === expense.id ? (
+                    <select
+                      autoFocus
+                      defaultValue={expense.category}
+                      onChange={(e) => {
+                        onUpdateCategory(expense.id, e.target.value);
+                        setEditingCategoryId(null);
+                      }}
+                      onBlur={() => setEditingCategoryId(null)}
+                      className="text-xs border border-gray-300 dark:border-gray-600 rounded px-1 py-0.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      {!categories.find(c => c.name === expense.category) && (
+                        <option value={expense.category} disabled>{expense.category} (deleted)</option>
+                      )}
+                      {categories.map(cat => (
+                        <option key={cat.id} value={cat.name}>{cat.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <button
+                      onClick={() => setEditingCategoryId(expense.id)}
+                      className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:opacity-75 transition-opacity"
+                    >
+                      {(() => {
+                        const cat = categories.find(c => c.name === expense.category);
+                        return (
+                          <span
+                            className="w-2 h-2 rounded-full inline-block flex-shrink-0"
+                            style={{ backgroundColor: cat?.color ?? '#6b7280' }}
+                          />
+                        );
+                      })()}
+                      {expense.category}
+                    </button>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                   {formatCurrency(expense.amount, currency)}

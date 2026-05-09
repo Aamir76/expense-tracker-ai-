@@ -115,8 +115,10 @@ export default function CategoryManager() {
       setError('');
 
       if (deleteConfirm?.expenseCount) {
-        // Reassign expenses first
-        await reassignExpensesToCategory(categoryId, deleteConfirm.targetCategoryId);
+        const targetCategory = categories.find(c => c.id === deleteConfirm.targetCategoryId);
+        if (targetCategory) {
+          await reassignExpensesToCategory(deleteConfirm.category.name, targetCategory.name);
+        }
       }
 
       await deleteCategory(categoryId);
