@@ -7,10 +7,42 @@ export interface UploadResult {
   path: string;
 }
 
+async function compressImage(file: File, maxDimension = 1200, quality = 0.82): Promise<File> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (width > maxDimension || height > maxDimension) {
+        if (width >= height) {
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
+        } else {
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => resolve(blob ? new File([blob], file.name, { type: 'image/jpeg' }) : file),
+        'image/jpeg',
+        quality
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+}
+
 export async function uploadReceipt(
   userId: string,
   expenseId: string,
-  file: File
+  file: File,
+  onCompressionDone?: () => void
 ): Promise<UploadResult> {
   if (!ALLOWED_TYPES.includes(file.type)) {
     throw new Error('Invalid file type. Please upload a JPG, PNG, or WebP image.');
@@ -20,13 +52,18 @@ export async function uploadReceipt(
     throw new Error('File is too large. Maximum size is 5MB.');
   }
 
-  const fileExt = file.name.split('.').pop();
+  // Compress JPEG and PNG; WebP is already efficient
+  const fileToUpload = file.type !== 'image/webp' ? await compressImage(file) : file;
+  onCompressionDone?.();
+
+  // Always use .jpg extension for compressed output
+  const fileExt = fileToUpload.type === 'image/jpeg' ? 'jpg' : file.name.split('.').pop();
   const fileName = `${expenseId}.${fileExt}`;
   const filePath = `${userId}/${fileName}`;
 
   const { data, error } = await supabase.storage
     .from('receipts')
-    .upload(filePath, file, {
+    .upload(filePath, fileToUpload, {
       cacheControl: '3600',
       upsert: true,
     });

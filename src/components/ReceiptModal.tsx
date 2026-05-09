@@ -17,6 +17,7 @@ export default function ReceiptModal({
   onClose,
   onUploadComplete,
 }: ReceiptModalProps) {
+  const [isCompressing, setIsCompressing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
   const [dragActive, setDragActive] = useState(false);
@@ -39,16 +40,20 @@ export default function ReceiptModal({
     }
 
     setError('');
-    setIsUploading(true);
+    setIsCompressing(true);
 
     try {
-      const result = await uploadReceipt(user.id, expenseId, file);
+      const result = await uploadReceipt(user.id, expenseId, file, () => {
+        setIsCompressing(false);
+        setIsUploading(true);
+      });
       onUploadComplete(result.path);
       onClose();
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to upload receipt';
       setError(errorMessage);
     } finally {
+      setIsCompressing(false);
       setIsUploading(false);
     }
   };
@@ -115,10 +120,12 @@ export default function ReceiptModal({
           onDragOver={handleDrag}
           onDrop={handleDrop}
         >
-          {isUploading ? (
+          {isCompressing || isUploading ? (
             <div className="space-y-3">
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="text-gray-600 dark:text-gray-400">Uploading...</p>
+              <p className="text-gray-600 dark:text-gray-400">
+                {isCompressing ? 'Optimizing image…' : 'Uploading…'}
+              </p>
             </div>
           ) : (
             <>

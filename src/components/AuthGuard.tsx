@@ -23,13 +23,13 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
     if (!user && !isPublicRoute) {
       // Not authenticated, redirect to login
-      router.push('/auth/login');
+      router.replace('/auth/login');
     } else if (user && !profile && pathname !== '/onboarding' && !isPublicRoute) {
       // Authenticated but no profile, redirect to onboarding
-      router.push('/onboarding');
+      router.replace('/onboarding');
     } else if (user && profile && (isPublicRoute || pathname === '/onboarding')) {
       // Authenticated with profile, redirect to dashboard from auth pages
-      router.push('/');
+      router.replace('/');
     }
   }, [user, profile, isLoading, router, pathname]);
 

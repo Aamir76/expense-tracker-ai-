@@ -25,7 +25,11 @@
       "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\(JSON.stringify\\(Object.keys\\(p.dependencies\\), null, 2\\)\\)\")",
       "Bash(node -e \"const v = require\\('./node_modules/next/package.json'\\).version; console.log\\(v\\)\")",
       "Bash(node -e ' *)",
-      "Bash(powershell -Command ' *)"
+      "Bash(powershell -Command ' *)",
+      "mcp__filesystem__directory_tree",
+      "mcp__filesystem__list_directory",
+      "mcp__filesystem__search_files",
+      "mcp__filesystem__read_text_file"
     ],
     "deny": []
   }

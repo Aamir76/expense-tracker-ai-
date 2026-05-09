@@ -20,7 +20,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Defined outside the component — no closure over state, no re-creation on renders
-async function fetchProfile(userId: string): Promise<Profile | null> {
+async function fetchProfile(userId: string, attempt = 0): Promise<Profile | null> {
   try {
     const { data, error } = await supabase
       .from('profiles')
@@ -28,11 +28,22 @@ async function fetchProfile(userId: string): Promise<Profile | null> {
       .eq('id', userId)
       .single();
 
-    if (error && error.code !== 'PGRST116') {
+    if (error) {
+      if (error.code === 'PGRST116') return null; // Confirmed: user has no profile row
+      // Transient error (cold DB, network blip) — retry before giving up
+      if (attempt < 2) {
+        await new Promise(r => setTimeout(r, 800 * (attempt + 1)));
+        return fetchProfile(userId, attempt + 1);
+      }
       console.error('Error fetching profile:', error);
+      return null;
     }
-    return data ?? null;
+    return data;
   } catch {
+    if (attempt < 2) {
+      await new Promise(r => setTimeout(r, 800 * (attempt + 1)));
+      return fetchProfile(userId, attempt + 1);
+    }
     return null;
   }
 }
