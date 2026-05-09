@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Expense, ExpenseFilters } from '@/types/expense';
 import { storage } from '@/lib/storage';
+import { deleteReceipt } from '@/lib/receipts';
 import { filterExpenses, calculateExpenseSummary } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -71,8 +72,14 @@ function HomeContent() {
   const handleDeleteExpense = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this expense?')) {
       try {
+        const expense = expenses.find(e => e.id === id);
         await storage.deleteExpense(id);
         setExpenses(prev => prev.filter(expense => expense.id !== id));
+        if (expense?.receipt_path && user) {
+          deleteReceipt(user.id, id).catch(err =>
+            console.error('Error deleting receipt from storage:', err)
+          );
+        }
       } catch (error) {
         console.error('Error deleting expense:', error);
       }
@@ -143,6 +150,7 @@ function HomeContent() {
 
             <div className="space-y-6">
               <ExpenseForm
+                key={editingExpense?.id || 'new'}
                 onSubmit={editingExpense ? handleUpdateExpense : handleAddExpense}
                 initialData={editingExpense || undefined}
                 onCancel={editingExpense ? handleCancelEdit : undefined}

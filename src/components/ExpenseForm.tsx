@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Expense, ExpenseCategory, EXPENSE_CATEGORIES } from '@/types/expense';
 import { generateId } from '@/lib/utils';
-import { uploadReceipt, validateReceiptFile, getSignedReceiptUrl } from '@/lib/receipts';
+import { uploadReceipt, validateReceiptFile, getSignedReceiptUrl, deleteReceipt } from '@/lib/receipts';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface ExpenseFormProps {
@@ -25,15 +25,19 @@ export default function ExpenseForm({ onSubmit, initialData, onCancel }: Expense
 
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+  const [existingReceiptRemoved, setExistingReceiptRemoved] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    setExistingReceiptRemoved(false);
     if (initialData?.receipt_path) {
       getSignedReceiptUrl(initialData.receipt_path).then(url => {
         if (url) setReceiptPreview(url);
       });
+    } else {
+      setReceiptPreview(null);
     }
-  }, [initialData?.receipt_path]);
+  }, [initialData?.id]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateForm = () => {
@@ -64,7 +68,7 @@ export default function ExpenseForm({ onSubmit, initialData, onCancel }: Expense
 
     try {
       const expenseId = initialData?.id || generateId();
-      let receiptPath = initialData?.receipt_path;
+      let receiptPath: string | undefined = existingReceiptRemoved ? undefined : initialData?.receipt_path;
 
       if (receiptFile && user) {
         try {
@@ -73,6 +77,14 @@ export default function ExpenseForm({ onSubmit, initialData, onCancel }: Expense
         } catch (uploadError) {
           console.error('Error uploading receipt:', uploadError);
           setErrors(prev => ({ ...prev, receipt: 'Failed to upload receipt. Expense will be saved without it.' }));
+        }
+      }
+
+      if (existingReceiptRemoved && !receiptFile && user) {
+        try {
+          await deleteReceipt(user.id, expenseId);
+        } catch (err) {
+          console.error('Error deleting receipt from storage:', err);
         }
       }
 
@@ -143,10 +155,20 @@ export default function ExpenseForm({ onSubmit, initialData, onCancel }: Expense
   };
 
   const handleRemoveReceipt = () => {
-    setReceiptFile(null);
-    setReceiptPreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    if (receiptFile) {
+      // Cancelling a newly selected file — revert to the saved receipt if there is one
+      setReceiptFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (initialData?.receipt_path && !existingReceiptRemoved) {
+        getSignedReceiptUrl(initialData.receipt_path).then(url => setReceiptPreview(url));
+      } else {
+        setReceiptPreview(null);
+      }
+    } else {
+      // Removing the existing saved receipt
+      setExistingReceiptRemoved(true);
+      setReceiptPreview(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
