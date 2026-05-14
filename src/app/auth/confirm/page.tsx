@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export default function ConfirmPage() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
-  const { user, profile, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -17,22 +17,13 @@ export default function ConfirmPage() {
     // Check if user is authenticated after confirmation
     if (user) {
       setStatus('success');
-
-      // Redirect based on profile status
-      const timer = setTimeout(() => {
-        if (profile) {
-          router.push('/');
-        } else {
-          router.push('/onboarding');
-        }
-      }, 2000);
-
+      const timer = setTimeout(() => router.push('/'), 2000);
       return () => clearTimeout(timer);
     } else {
       // No user found - might be an invalid or expired link
       setStatus('error');
     }
-  }, [user, profile, isLoading, router]);
+  }, [user, isLoading, router]);
 
   if (status === 'loading' || isLoading) {
     return (

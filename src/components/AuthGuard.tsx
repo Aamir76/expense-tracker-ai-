@@ -8,11 +8,10 @@ interface AuthGuardProps {
   children: React.ReactNode;
 }
 
-// Routes that don't require authentication
 const publicRoutes = ['/auth/login', '/auth/signup', '/auth/confirm'];
 
 export default function AuthGuard({ children }: AuthGuardProps) {
-  const { user, profile, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -22,18 +21,12 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
 
     if (!user && !isPublicRoute) {
-      // Not authenticated, redirect to login
       router.replace('/auth/login');
-    } else if (user && !profile && pathname !== '/onboarding' && !isPublicRoute) {
-      // Authenticated but no profile, redirect to onboarding
-      router.replace('/onboarding');
-    } else if (user && profile && (isPublicRoute || pathname === '/onboarding')) {
-      // Authenticated with profile, redirect to dashboard from auth pages
+    } else if (user && isPublicRoute) {
       router.replace('/');
     }
-  }, [user, profile, isLoading, router, pathname]);
+  }, [user, isLoading, router, pathname]);
 
-  // Show loading state while checking auth
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -42,15 +35,8 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     );
   }
 
-  // Allow rendering if:
-  // 1. Public route
-  // 2. Authenticated user on protected route with profile
-  // 3. Authenticated user on onboarding without profile
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
-  const canRender =
-    isPublicRoute ||
-    (user && profile) ||
-    (user && !profile && pathname === '/onboarding');
+  const canRender = isPublicRoute || !!user;
 
   if (!canRender) {
     return (

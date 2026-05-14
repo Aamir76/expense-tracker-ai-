@@ -48,6 +48,36 @@ async function fetchProfile(userId: string, attempt = 0): Promise<Profile | null
   }
 }
 
+// Creates a default profile for brand-new users. Uses INSERT so it never
+// overwrites an existing profile. On conflict (23505) the row already exists
+// — re-fetch it (handles returning users whose fetchProfile failed transiently).
+async function autoCreateProfile(user: User): Promise<Profile | null> {
+  const name = (user.email?.split('@')[0] ?? 'User').replace(/[._+\-]/g, ' ').trim();
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .insert({ id: user.id, name, currency: 'USD' })
+    .select()
+    .single();
+
+  if (error) {
+    if (error.code === '23505') {
+      // Row already exists — fetch and return it
+      return fetchProfile(user.id);
+    }
+    console.error('Error creating default profile:', error);
+    return null;
+  }
+
+  // Seed categories for the new user, non-blocking
+  void (async () => {
+    const { error } = await supabase.rpc('seed_default_categories', { p_user_id: user.id });
+    if (error) console.error('Error seeding categories:', error);
+  })();
+
+  return data;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -84,8 +114,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(newSession?.user ?? null);
 
         if (newSession?.user) {
-          const profileData = await fetchProfile(newSession.user.id);
+          let profileData = await fetchProfile(newSession.user.id);
           if (!mountedRef.current) return;
+          if (profileData === null) {
+            profileData = await autoCreateProfile(newSession.user);
+            if (!mountedRef.current) return;
+          }
           setProfile(profileData);
         } else {
           setProfile(null);

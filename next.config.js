@@ -8,9 +8,8 @@ const nextConfig = {
 
   experimental: {
     // Rewrite barrel-file imports so only the exports actually used end up in the
-    // bundle. lucide-react ships 1500+ icons; recharts re-exports many sub-modules.
-    // Neither is in Next.js 14.2's built-in default list, so both need to be explicit.
-    optimizePackageImports: ['lucide-react', 'recharts'],
+    // bundle. lucide-react ships 1500+ icons and is not in Next.js's built-in list.
+    optimizePackageImports: ['lucide-react'],
   },
 
   images: {

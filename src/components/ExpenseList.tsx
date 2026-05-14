@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, memo } from 'react';
 import { Expense } from '@/types/expense';
 import { Category } from '@/types/supabase';
 import { formatCurrency, formatDate } from '@/lib/utils';
@@ -16,11 +16,16 @@ interface ExpenseListProps {
   onUpdateCategory: (id: string, category: string) => void;
 }
 
-export default function ExpenseList({ expenses, categories, onEdit, onDelete, onUpdateCategory }: ExpenseListProps) {
+function ExpenseList({ expenses, categories, onEdit, onDelete, onUpdateCategory }: ExpenseListProps) {
   const { currency } = useCurrency();
   const [viewingReceipt, setViewingReceipt] = useState<string | null>(null);
   const [loadingReceiptId, setLoadingReceiptId] = useState<string | null>(null);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+
+  const categoryMap = useMemo(
+    () => Object.fromEntries(categories.map(c => [c.name, c])),
+    [categories]
+  );
 
   const handleViewReceipt = async (expenseId: string, receiptPath: string) => {
     setLoadingReceiptId(expenseId);
@@ -104,7 +109,7 @@ export default function ExpenseList({ expenses, categories, onEdit, onDelete, on
                       onBlur={() => setEditingCategoryId(null)}
                       className="text-xs border border-gray-300 dark:border-gray-600 rounded px-1 py-0.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     >
-                      {!categories.find(c => c.name === expense.category) && (
+                      {!categoryMap[expense.category] && (
                         <option value={expense.category} disabled>{expense.category} (deleted)</option>
                       )}
                       {categories.map(cat => (
@@ -116,15 +121,10 @@ export default function ExpenseList({ expenses, categories, onEdit, onDelete, on
                       onClick={() => setEditingCategoryId(expense.id)}
                       className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:opacity-75 transition-opacity"
                     >
-                      {(() => {
-                        const cat = categories.find(c => c.name === expense.category);
-                        return (
-                          <span
-                            className="w-2 h-2 rounded-full inline-block flex-shrink-0"
-                            style={{ backgroundColor: cat?.color ?? '#6b7280' }}
-                          />
-                        );
-                      })()}
+                      <span
+                        className="w-2 h-2 rounded-full inline-block flex-shrink-0"
+                        style={{ backgroundColor: categoryMap[expense.category]?.color ?? '#6b7280' }}
+                      />
                       {expense.category}
                     </button>
                   )}
@@ -169,3 +169,5 @@ export default function ExpenseList({ expenses, categories, onEdit, onDelete, on
     </div>
   );
 }
+
+export default memo(ExpenseList);

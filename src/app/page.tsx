@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Expense, ExpenseFilters } from '@/types/expense';
 import { Category } from '@/types/supabase';
 import { storage } from '@/lib/storage';
@@ -82,7 +82,7 @@ function HomeContent() {
     }
   };
 
-  const handleDeleteExpense = async (id: string) => {
+  const handleDeleteExpense = useCallback(async (id: string) => {
     if (window.confirm('Are you sure you want to delete this expense?')) {
       try {
         const expense = expenses.find(e => e.id === id);
@@ -97,17 +97,17 @@ function HomeContent() {
         console.error('Error deleting expense:', error);
       }
     }
-  };
+  }, [expenses, user]);
 
-  const handleEditExpense = (expense: Expense) => {
+  const handleEditExpense = useCallback((expense: Expense) => {
     setEditingExpense(expense);
-  };
+  }, []);
 
-  const handleCancelEdit = () => {
+  const handleCancelEdit = useCallback(() => {
     setEditingExpense(null);
-  };
+  }, []);
 
-  const handleUpdateCategory = async (id: string, newCategory: string) => {
+  const handleUpdateCategory = useCallback(async (id: string, newCategory: string) => {
     const expense = expenses.find(e => e.id === id);
     if (!expense) return;
     try {
@@ -116,14 +116,15 @@ function HomeContent() {
     } catch (error) {
       console.error('Error updating category:', error);
     }
-  };
+  }, [expenses]);
 
 
-  const filteredExpenses = filterExpenses(expenses, filters);
-  const summary = calculateExpenseSummary(expenses);
-  const recentExpenses = [...expenses]
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 5);
+  const filteredExpenses = useMemo(() => filterExpenses(expenses, filters), [expenses, filters]);
+  const summary = useMemo(() => calculateExpenseSummary(expenses), [expenses]);
+  const recentExpenses = useMemo(
+    () => [...expenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5),
+    [expenses]
+  );
 
   if (isLoading) {
     return (
