@@ -122,24 +122,27 @@ export async function reorderCategories(
   userId: string,
   categoryIds: string[]
 ): Promise<void> {
-  // Update sort_order for each category
   const updates = categoryIds.map((id, index) => ({
     id,
     user_id: userId,
     sort_order: index,
   }));
 
-  for (const update of updates) {
-    const { error } = await supabase
-      .from('categories')
-      .update({ sort_order: update.sort_order })
-      .eq('id', update.id)
-      .eq('user_id', update.user_id);
+  // Fire all updates in parallel — single network round-trip instead of N sequential ones
+  const results = await Promise.all(
+    updates.map(({ id, user_id, sort_order }) =>
+      supabase
+        .from('categories')
+        .update({ sort_order })
+        .eq('id', id)
+        .eq('user_id', user_id)
+    )
+  );
 
-    if (error) {
-      console.error('Error reordering category:', error);
-      throw error;
-    }
+  const failed = results.find(r => r.error);
+  if (failed?.error) {
+    console.error('Error reordering categories:', failed.error);
+    throw failed.error;
   }
 }
 

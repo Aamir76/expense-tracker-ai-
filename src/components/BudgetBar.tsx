@@ -67,8 +67,8 @@ export default function BudgetBar({ budget, spent, onEditClick }: BudgetBarProps
       {/* Progress bar */}
       <div className="relative h-4 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-3">
         <div
-          className={`absolute inset-y-0 left-0 ${barColor} transition-all duration-300`}
-          style={{ width: `${percentage}%` }}
+          className={`absolute inset-y-0 left-0 right-0 origin-left ${barColor} transition-transform duration-300`}
+          style={{ transform: `scaleX(${percentage / 100})` }}
         />
       </div>
 

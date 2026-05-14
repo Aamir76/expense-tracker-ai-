@@ -28,6 +28,7 @@ function HomeContent() {
   const [filters, setFilters] = useState<ExpenseFilters>({});
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [displayCount, setDisplayCount] = useState(50);
 
   useEffect(() => {
     // HomeContent only renders when AuthGuard confirms user + profile are set,
@@ -119,11 +120,19 @@ function HomeContent() {
   }, [expenses]);
 
 
+  // Reset pagination whenever filters change
+  useEffect(() => { setDisplayCount(50); }, [filters]);
+
   const filteredExpenses = useMemo(() => filterExpenses(expenses, filters), [expenses, filters]);
   const summary = useMemo(() => calculateExpenseSummary(expenses), [expenses]);
   const recentExpenses = useMemo(
     () => [...expenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5),
     [expenses]
+  );
+  // Paginated slice — summary/filters still operate on the full set
+  const paginatedExpenses = useMemo(
+    () => filteredExpenses.slice(0, displayCount),
+    [filteredExpenses, displayCount]
   );
 
   if (isLoading) {
@@ -187,12 +196,23 @@ function HomeContent() {
               />
 
               <ExpenseList
-                expenses={filteredExpenses}
+                expenses={paginatedExpenses}
                 categories={categories}
                 onEdit={handleEditExpense}
                 onDelete={handleDeleteExpense}
                 onUpdateCategory={handleUpdateCategory}
               />
+
+              {filteredExpenses.length > displayCount && (
+                <div className="text-center">
+                  <button
+                    onClick={() => setDisplayCount(c => c + 50)}
+                    className="px-6 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                  >
+                    Load more ({filteredExpenses.length - displayCount} remaining)
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}

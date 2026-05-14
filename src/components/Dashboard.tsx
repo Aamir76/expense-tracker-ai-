@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { ExpenseSummary, Expense } from '@/types/expense';
 import { formatCurrency } from '@/lib/utils';
 import { useCurrency } from '@/contexts/CurrencyContext';
@@ -12,25 +13,30 @@ interface DashboardProps {
   onNavigateToSettings?: () => void;
 }
 
+const CATEGORY_COLORS: Record<string, string> = {
+  Food: 'bg-orange-500',
+  Transportation: 'bg-blue-500',
+  Entertainment: 'bg-purple-500',
+  Shopping: 'bg-pink-500',
+  Bills: 'bg-red-500',
+  Other: 'bg-gray-500',
+};
+
+const getCategoryColor = (category: string) =>
+  CATEGORY_COLORS[category] ?? CATEGORY_COLORS.Other;
+
 export default function Dashboard({ summary, recentExpenses, onNavigateToSettings }: DashboardProps) {
   const { currency } = useCurrency();
   const { profile } = useAuth();
-  const topCategories = Object.entries(summary.categoryTotals)
-    .filter(([_, amount]) => amount > 0)
-    .sort(([_, a], [__, b]) => b - a)
-    .slice(0, 3);
 
-  const getCategoryColor = (category: string) => {
-    const colors = {
-      Food: 'bg-orange-500',
-      Transportation: 'bg-blue-500',
-      Entertainment: 'bg-purple-500',
-      Shopping: 'bg-pink-500',
-      Bills: 'bg-red-500',
-      Other: 'bg-gray-500'
-    };
-    return colors[category as keyof typeof colors] || colors.Other;
-  };
+  const topCategories = useMemo(
+    () =>
+      Object.entries(summary.categoryTotals)
+        .filter(([, amount]) => amount > 0)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 3),
+    [summary.categoryTotals]
+  );
 
   return (
     <div className="space-y-6">

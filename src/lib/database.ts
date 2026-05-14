@@ -19,7 +19,7 @@ export const database = {
     try {
       const { data, error } = await supabase
         .from('expenses')
-        .select('*')
+        .select('id, amount, description, category, date, created_at, updated_at, receipt_url')
         .order('date', { ascending: false });
 
       if (error) throw new DatabaseError('Failed to fetch expenses', error);

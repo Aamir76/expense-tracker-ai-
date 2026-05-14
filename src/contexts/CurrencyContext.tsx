@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export type Currency = 'USD' | 'EUR' | 'GBP' | 'INR' | 'JPY' | 'CAD' | 'AUD' | 'CNY' | 'PKR';
@@ -55,20 +55,27 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
     } catch { /* private browsing */ }
   }, [profile]);
 
-  const setCurrency = (newCurrency: Currency) => {
+  const setCurrency = useCallback((newCurrency: Currency) => {
     setCurrencyState(newCurrency);
     try { localStorage.setItem('currency', newCurrency); } catch { /* private browsing */ }
-  };
+  }, []);
 
-  const getCurrencySymbol = () => CURRENCY_SYMBOLS[currency];
+  const getCurrencySymbol = useCallback(() => CURRENCY_SYMBOLS[currency], [currency]);
 
-  const formatAmount = (amount: number) =>
-    `${CURRENCY_SYMBOLS[currency]}${amount.toFixed(2)}`;
+  const formatAmount = useCallback(
+    (amount: number) => `${CURRENCY_SYMBOLS[currency]}${amount.toFixed(2)}`,
+    [currency]
+  );
+
+  const value = useMemo(
+    () => ({ currency, setCurrency, getCurrencySymbol, formatAmount }),
+    [currency, setCurrency, getCurrencySymbol, formatAmount]
+  );
 
   // Always render children — no null gate needed.
   // Children start with USD default and update once profile/localStorage are read.
   return (
-    <CurrencyContext.Provider value={{ currency, setCurrency, getCurrencySymbol, formatAmount }}>
+    <CurrencyContext.Provider value={value}>
       {children}
     </CurrencyContext.Provider>
   );

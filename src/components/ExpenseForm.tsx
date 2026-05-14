@@ -266,6 +266,8 @@ export default function ExpenseForm({ onSubmit, initialData, onCancel }: Expense
                   <img
                     src={receiptPreview}
                     alt="Receipt preview"
+                    width={64}
+                    height={64}
                     className="w-16 h-16 object-cover rounded"
                   />
                   <div className="flex-1 min-w-0">
@@ -280,7 +282,7 @@ export default function ExpenseForm({ onSubmit, initialData, onCancel }: Expense
                     type="button"
                     onClick={handleRemoveReceipt}
                     disabled={isSubmitting}
-                    className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                    className="p-2 text-gray-400 hover:text-red-500 transition-colors"
                     title="Remove receipt"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
